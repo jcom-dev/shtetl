@@ -145,7 +145,7 @@ This is NOT government regulation but rather a hierarchical authority system:
 - Foster open-source adoption with a vibrant community of volunteer developers contributing features and integrations
 
 ### User Success Metrics
-- At least 70% of active congregants subscribe to personalized minyan or shiur alerts
+- At least 70% of active kehilla members (congregants) subscribe to personalized minyan or shiur alerts
 - 80% of users can find current minyan times within 30 seconds of opening the app
 - 60% of surveyed users report they no longer need to call gabbaim for schedule information
 
@@ -281,7 +281,7 @@ This is NOT government regulation but rather a hierarchical authority system:
 #### Additional Core Features
 
 - **Shiur & Event Listings:** Publish learning sessions and communal events with categories, speakers, and location metadata
-- **User Subscriptions & Alerts:** Allow congregants to subscribe to specific minyanim or shiur categories and receive push/email notifications
+- **User Subscriptions & Alerts:** Allow kehilla members (congregants) to subscribe to specific minyanim or shiur categories and receive push/email notifications
 - **Automation Hooks:** Integrate with MCP servers/Zapier to trigger facilities actions (e.g., HVAC on/off) based on schedule data
 - **Mobile App Access:** Provide iOS/Android front ends for browsing schedules, configuring reminders, and receiving alerts
 
