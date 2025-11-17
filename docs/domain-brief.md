@@ -188,13 +188,13 @@ Shul
 **Technology Stack:**
 - **Frontend:** React + Monaco Editor (DSL IDE with autocomplete)
 - **Backend:** Go with PEG parser for rule DSL
-- **Database:** MongoDB (tree structure, flexible schema)
+- **Database:** PostgreSQL with JSONB (tree structure support, ACID compliance, multi-tenant RLS)
 - **Calendar:** Hebrew calendar libraries for primitive evaluation
 - **PDF Generation:** React-PDF or Go-based solution
 
 **Multi-Tenant Strategy:**
-- Shared database with tenant isolation via Shul ID
-- Each Shul maintains independent minyan tree
+- Shared PostgreSQL database with Row-Level Security (RLS) for tenant isolation
+- Each Shul maintains independent minyan tree stored in JSONB columns
 - Primitives can be global (RoshChodesh) or community-specific (Selichot dates)
 
 ### Development Impact
@@ -205,7 +205,7 @@ Shul
 - Build tree-based UI for creating minyan structure
 - Implement rule editor with condition → time mapping
 - Build validation engine with coverage calculator
-- Import base zmanim data (CSV → MongoDB)
+- Import base zmanim data (CSV → PostgreSQL)
 - Output: Working rule configuration system
 
 **Phase 2: PDF Renderer (Weeks 5-6)**
@@ -221,12 +221,12 @@ Shul
 - User acceptance testing with gabbai
 
 **Development Complexity:**
-- **Moderate:** Tree structure is conceptually simpler than flat rule system
+- **Moderate:** Tree structure stored in PostgreSQL JSONB provides flexibility with ACID guarantees
 - **Key Risk:** DSL parser and validation logic complexity
 - **Mitigation:** Start with simple rule syntax, expand iteratively
 
 **Required Expertise:**
-- Go backend development (parser, rule engine)
+- Go backend development (parser, rule engine, PostgreSQL)
 - React development (tree UI, Monaco integration)
 - Hebrew text rendering (RTL, Unicode, fonts)
 - PDF generation (layout, formatting, multi-page)
@@ -234,7 +234,7 @@ Shul
 ### Timeline Impact
 
 **8-Week MVP Timeline:**
-- Week 1-2: Tree structure UI + basic rule editor
+- Week 1-2: PostgreSQL schema + tree structure UI + basic rule editor
 - Week 3-4: Validation engine + coverage calculator
 - Week 5-6: PDF generation from tree data
 - Week 7-8: Testing + first Shul pilot (Beis Mordechai)
@@ -257,7 +257,7 @@ As per project requirements, avoid giving time estimates for stakeholder plannin
 
 **Infrastructure Costs (Estimated):**
 - AWS Serverless hosting: ~$50-200/month (depending on usage)
-- MongoDB Atlas: Free tier → ~$50/month for production
+- PostgreSQL (managed): Free tier → ~$50/month for production
 - Domain + SSL: ~$20/year
 - Total: < $300/month for MVP
 
