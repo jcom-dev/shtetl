@@ -111,9 +111,9 @@ npm install @clerk/clerk-expo
 | -------- | -------- | ------- | --------- |
 | Backend Language | Go | 1.25.4 | Strong typing (AI-friendly), excellent performance, great for DSL parsers, explicit error handling |
 | Frontend Framework | React | 19.2 | Component reusability, Monaco editor integration, large ecosystem |
-| Build Tool (Web) | Vite | latest | Fast dev server, modern bundling, excellent TypeScript support |
-| Mobile Framework | React Native (Expo) | latest | Cross-platform, rapid development, easier deployment via EAS |
-| Primary Database | PostgreSQL | 17 | Relational integrity, JSONB for flexibility, excellent for multi-tenancy |
+| Build Tool (Web) | Vite | 7.2 | Fast dev server, modern bundling, excellent TypeScript support, ESM-only |
+| Mobile Framework | React Native (Expo) | SDK 54 | Cross-platform, rapid development, easier deployment via EAS, React Native 0.81 |
+| Primary Database | PostgreSQL | 18 | Relational integrity, JSONB for flexibility, improved I/O subsystem, excellent for multi-tenancy |
 | Caching Layer | Redis | 7.4 | Session storage, schedule caching, rate limiting |
 | ORM | GORM | v2 (latest) | Productivity for common queries, raw SQL for complex operations |
 | Authentication | Clerk | latest | Organization management for Shuls, pre-built React components, strong Go SDK |
@@ -157,7 +157,7 @@ npm install @clerk/clerk-expo
 
 **Infrastructure:**
 - **Development:** Local Coder (Docker) - $0 cost
-- **Production Database:** PostgreSQL 17 (AWS RDS)
+- **Production Database:** PostgreSQL 18 (AWS RDS)
 - **Production Cache:** Redis 7.4 (AWS ElastiCache)
 - **Production Deployment:** AWS Serverless (Lambda + API Gateway)
 - **Containerization:** Docker for local development
@@ -2021,11 +2021,808 @@ Coder solves environment issues by:
 - Architecture document (this file) remains human-readable for manual development
 - Traditional development workflow still fully supported
 
+### ADR-009: Visual Template Designer for Print-Ready Timetables
+
+**Decision:** Implement a visual, no-code template designer system for generating print-ready timetables rather than fixed PDF layouts or code-based template customization.
+
+**Rationale:**
+- **Non-Technical Users:** Gaboim (synagogue administrators) are non-technical and cannot edit code or complex configurations
+- **Per-Shul Customization:** Each synagogue has unique layout preferences (logos, colors, fonts, column arrangements, branding)
+- **Multiple Time Periods:** System must support daily, weekly, monthly, and seasonal (bi-annual) timetables without code changes
+- **Hebrew RTL Support:** Print layouts must correctly render Hebrew text with right-to-left directionality
+- **Community Standards:** PDFs must match familiar timetable formats used by Jewish communities (FR38-FR39)
+- **Immediate Feedback:** Users need instant preview of changes before generating final PDFs
+
+**Context:**
+
+From PRD requirements:
+- **FR38:** Administrators can generate formatted PDF timetables with Hebrew RTL text support
+- **FR39:** PDF output matches community-standard layouts (multi-minyan display, location markers)
+- **FR40:** Administrators can export schedules to multiple formats (PDF, CSV, JSON)
+- **NFR-ACCESS-6 through NFR-ACCESS-9:** Hebrew RTL text rendering requirements
+- **User Persona:** Gaboim are non-technical users who need complete control without complexity (PRD line 19)
+
+Traditional approaches fail because:
+- **Fixed Templates:** Each shul has unique preferences; one-size-fits-all doesn't work
+- **Code-Based Customization:** Gaboim can't edit React/CSS code
+- **Designer Tools External:** Requiring Canva/Adobe introduces friction and export issues
+- **No Hebrew Support:** Most template systems don't handle RTL text properly
+
+**Architecture Design:**
+
+**1. Visual Template Designer (Web UI)**
+
+```typescript
+// Frontend: shtetl-web/src/features/shul-admin/pdf/
+
+interface TemplateDesignerConfig {
+  // Page Setup (dropdowns)
+  pageSize: 'A4' | 'Letter' | 'Legal';
+  orientation: 'Portrait' | 'Landscape';
+
+  // Header Section (toggles + uploads)
+  header: {
+    showShulName: boolean;
+    showLogo: boolean;
+    logoUrl?: string;
+    showDateRange: boolean;
+    customText?: string;
+  };
+
+  // Layout Section (visual selection)
+  layout: {
+    style: 'Grid' | 'List' | 'Compact';
+    columnsPerWeek: 7 | 14;
+    showWeekends: 'Separate' | 'Inline' | 'Hidden';
+    dayHeaderSize: 'Small' | 'Medium' | 'Large';
+  };
+
+  // Content Display (checkboxes)
+  content: {
+    showHebrewDates: boolean;
+    showZmanim: boolean;
+    showMinyanLocations: boolean;
+    groupMinyanBy: 'Type' | 'Time' | 'Location';
+    highlightHolidays: boolean;
+  };
+
+  // Typography (visual pickers)
+  typography: {
+    fontFamily: 'David Libre' | 'Frank Ruehl' | 'Arial';
+    minyanFontSize: 'Small (10pt)' | 'Medium (12pt)' | 'Large (14pt)';
+    timeFontSize: 'Small' | 'Medium' | 'Large';
+    boldTimes: boolean;
+  };
+
+  // Colors (color pickers)
+  colors: {
+    headerBackground: string;
+    holidayHighlight: string;
+    fastDayHighlight: string;
+    weekdayBackground: string;
+    shabbatBackground: string;
+  };
+}
+```
+
+**2. Preset Templates (80% Coverage)**
+
+Provide 3-5 professionally designed presets that cover most use cases:
+- **Classic Grid:** Traditional weekly grid, 7 columns, portrait A4
+- **Compact List:** Space-efficient list format, fits 2-3 weeks per page
+- **Monthly Overview:** Full month on one landscape page
+- **Daily Detail:** One day per page with shiurim and events
+- **Seasonal Calendar:** Multi-week view for High Holiday season
+
+Users start with preset → customize colors/fonts/logo → save as custom template.
+
+**3. Backend Storage & API**
+
+```sql
+-- Store custom templates per synagogue
+CREATE TABLE shul_pdf_templates (
+  id UUID PRIMARY KEY,
+  shul_id UUID REFERENCES shuls(id),
+  name VARCHAR(100) NOT NULL,
+  config JSONB NOT NULL,  -- Full TemplateDesignerConfig
+  is_default BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+```go
+// services/shul/internal/domain/pdf/generator.go
+
+type PDFGenerator struct {
+    templates map[string]*Template
+}
+
+func (g *PDFGenerator) GenerateTimetable(
+    shulID string,
+    dateRange DateRange,
+    config TemplateDesignerConfig,
+) ([]byte, error) {
+    // 1. Fetch schedule data
+    schedule := g.scheduleRepo.GetSchedule(shulID, dateRange)
+
+    // 2. Select layout engine based on config
+    var layout Layout
+    switch config.Layout.Style {
+    case "Grid":
+        layout = NewGridLayout(config)
+    case "List":
+        layout = NewListLayout(config)
+    case "Compact":
+        layout = NewCompactLayout(config)
+    }
+
+    // 3. Render PDF with react-pdf or Go library
+    pdf := layout.Render(schedule, config)
+
+    return pdf.Bytes(), nil
+}
+```
+
+**4. Technical Implementation**
+
+**Option A: react-pdf (Frontend Generation) - Recommended for MVP**
+- Instant preview without server roundtrip
+- Better Hebrew RTL support (built-in)
+- Easier iteration on templates
+- PDFDownloadLink component for direct download
+
+**Option B: Backend PDF Generation (Go) - For Mobile/Automation**
+- API endpoint: `POST /api/v1/shuls/{id}/generate-pdf`
+- Required for mobile admin apps
+- Required for scheduled/automated generation
+- Use github.com/jung-kurt/gofpdf or similar
+
+**Hybrid Approach:**
+- Web UI uses react-pdf for live preview + download
+- Mobile/automation uses Go backend API
+- Both share same TemplateDesignerConfig format
+
+**5. User Experience Flow**
+
+```
+1. Admin clicks "Generate Timetable"
+2. Modal opens with template selector:
+   - "Weekly Grid (Most Common)"
+   - "Monthly Overview"
+   - "Custom Template" (if previously saved)
+3. Select template → Designer opens:
+   - Left panel: Configuration controls
+   - Right panel: Live PDF preview
+4. User adjusts:
+   - Upload shul logo
+   - Pick brand colors
+   - Toggle zmanim display
+   - Adjust font sizes
+5. Changes update preview in real-time
+6. Click "Save Template" (optional, for reuse)
+7. Click "Download PDF"
+8. PDF generated and downloaded
+```
+
+**6. Project Structure**
+
+```
+shtetl-web/src/features/shul-admin/pdf/
+├── components/
+│   ├── TemplateDesigner.tsx       # Main designer UI
+│   ├── TemplateSelector.tsx       # Preset selection
+│   ├── ConfigurationPanel.tsx     # Left-side controls
+│   ├── LivePreview.tsx            # Right-side preview
+│   └── TemplateLibrary.tsx        # Saved templates
+├── templates/
+│   ├── WeeklyGridTemplate.tsx     # react-pdf component
+│   ├── MonthlyTemplate.tsx
+│   ├── DailyTemplate.tsx
+│   └── CompactListTemplate.tsx
+├── layouts/
+│   ├── GridLayout.tsx             # Reusable layout engines
+│   ├── ListLayout.tsx
+│   └── CompactLayout.tsx
+├── hooks/
+│   ├── useTemplateConfig.ts       # Load/save configs
+│   └── usePDFGeneration.ts        # Generate PDFs
+└── api/
+    └── pdfApi.ts                  # Backend API calls
+```
+
+**Backend:**
+```
+services/shul/internal/domain/pdf/
+├── generator.go           # Main PDF generator
+├── layouts/
+│   ├── grid_layout.go
+│   ├── list_layout.go
+│   └── compact_layout.go
+├── renderers/
+│   ├── hebrew_text.go    # RTL text handling
+│   └── calendar_grid.go
+└── templates/
+    └── config.go          # TemplateDesignerConfig struct
+```
+
+**Implementation:**
+
+**MVP Scope:**
+- 2-3 preset templates (Weekly Grid, Monthly Overview)
+- Basic customization: logo upload, color selection, font size
+- react-pdf frontend generation with live preview
+- Save/load custom templates per shul
+
+**Post-MVP Enhancements:**
+- Advanced layout builder (drag-and-drop sections)
+- More preset templates (daily, seasonal, compact)
+- Backend Go PDF generation for mobile/automation
+- Template sharing marketplace (shuls share templates)
+- Multi-page scheduling (e.g., Elul through Sukkot)
+- Custom page breaks and section dividers
+
+**Consequences:**
+
+**Positive:**
+- ✅ Empowers non-technical gaboim to create professional timetables
+- ✅ Each shul gets unique branded layouts without developer intervention
+- ✅ Instant visual feedback reduces errors and improves UX
+- ✅ Reusable templates save time for recurring timetable generation
+- ✅ Aligns with NFR-USE-1: Gaboim can create schedules within 30 minutes
+- ✅ Supports all time periods (daily/weekly/monthly) through single system
+
+**Negative:**
+- ⚠️ More complex than fixed templates (higher initial development cost)
+- ⚠️ Need to maintain template rendering engine across changes
+- ⚠️ Visual designer UI requires significant frontend work
+- ⚠️ Testing requires validating many configuration combinations
+
+**Technical Challenges:**
+- **Hebrew RTL Rendering:** Must handle bidirectional text correctly in PDFs
+- **Print-to-Screen Fidelity:** Preview must exactly match final PDF output
+- **Configuration Complexity:** Need to balance flexibility vs. overwhelming users
+- **Mobile PDF Generation:** Backend API required for mobile admins
+
+**Risk Mitigation:**
+- Start with 2-3 presets to validate approach before building full designer
+- Use react-pdf library (proven Hebrew RTL support)
+- Provide "Reset to Default" option if users break layouts
+- Comprehensive testing with real synagogue layouts from design partners
+- Fallback to backend generation if browser performance issues arise
+
+**Testing Strategy:**
+- Visual regression tests for preset templates
+- Hebrew text rendering validation (no mojibake, correct RTL)
+- Cross-browser PDF generation testing
+- User testing with actual gaboim from design partner shuls
+- Performance testing: large timetables (100+ days, 10+ minyanim)
+
+**Success Criteria:**
+- 80%+ of gaboim can generate branded timetable within 15 minutes
+- Generated PDFs match community standards (validated by design partners)
+- Hebrew text renders correctly in all browsers and PDF viewers
+- Users save and reuse custom templates (indicates value)
+- Zero "can you help me design this" support requests after initial training
+
+**Related Requirements:**
+- FR38, FR39, FR40 (PDF generation requirements)
+- NFR-ACCESS-6 through NFR-ACCESS-9 (Hebrew RTL support)
+- NFR-USE-1 (30-minute learning curve for gaboim)
+- NFR-USE-8 (WYSIWYG preview)
+
+### ADR-010: GitHub Projects for Story Management with BMAD Integration
+
+**Decision:** Use GitHub Projects as the primary project management tool, with BMAD workflows creating and syncing stories to GitHub Issues/Projects via GitHub CLI (`gh`).
+
+**Rationale:**
+- **Centralized Tracking:** GitHub Projects provides visual kanban boards, roadmaps, and progress tracking
+- **Team Collaboration:** Multiple contributors can see project status without accessing local files
+- **Issue Integration:** Stories become GitHub Issues with full discussion, labels, assignees
+- **GitHub CLI Available:** `gh` CLI already installed (version 2.45.0), enables automation
+- **BMAD Compatibility:** BMAD creates markdown stories locally; can sync to GitHub via post-creation hook
+- **No Vendor Lock-in:** Stories exist as both markdown files (portable) AND GitHub Issues (collaborative)
+
+**Context:**
+
+BMAD v6 currently:
+- Creates stories as markdown files: `docs/sprint-artifacts/story-001.md`
+- Tracks status in: `docs/sprint-artifacts/sprint-status.yaml`
+- Workflows: `/bmad:bmm:workflows:create-story`, `/bmad:bmm:workflows:dev-story`, etc.
+
+GitHub Projects provides:
+- Visual kanban board with drag-and-drop status updates
+- Roadmap view with timelines and milestones
+- Filtering by epic, assignee, labels, status
+- Comments and discussion threads per story
+- Integration with pull requests and code reviews
+
+**Challenge:** BMAD doesn't natively support GitHub Projects - need to build integration layer.
+
+**Architecture Design:**
+
+**1. Dual-Source-of-Truth Strategy**
+
+```
+Local Markdown (BMAD)          GitHub Issues (Projects)
+├── story-001.md       ←sync→  Issue #1
+├── story-002.md       ←sync→  Issue #2
+└── sprint-status.yaml ←sync→  Project Board
+```
+
+**Local markdown remains canonical source** for story content (acceptance criteria, technical specs, dev notes).
+
+**GitHub Issues track status** (To Do, In Progress, Done) and collaboration (comments, assignees).
+
+**2. GitHub CLI Integration Script**
+
+Create a helper script that BMAD workflows can call:
+
+```bash
+#!/bin/bash
+# scripts/sync-story-to-github.sh
+
+STORY_FILE=$1
+STORY_KEY=$(basename $STORY_FILE .md)
+
+# Extract story metadata from markdown
+TITLE=$(grep "^# " $STORY_FILE | head -1 | sed 's/^# //')
+EPIC=$(grep "^Epic:" $STORY_FILE | cut -d: -f2 | xargs)
+DESCRIPTION=$(sed -n '/## Description/,/## /p' $STORY_FILE | tail -n +2 | head -n -1)
+
+# Create or update GitHub Issue
+ISSUE_NUMBER=$(gh issue list --label "$STORY_KEY" --json number --jq '.[0].number')
+
+if [ -z "$ISSUE_NUMBER" ]; then
+  # Create new issue
+  gh issue create \
+    --title "$TITLE" \
+    --body "$DESCRIPTION\n\n[Full Story](../blob/main/$STORY_FILE)" \
+    --label "story,$EPIC,$STORY_KEY" \
+    --project "Shtetl Development"
+else
+  # Update existing issue
+  gh issue edit $ISSUE_NUMBER \
+    --title "$TITLE" \
+    --body "$DESCRIPTION\n\n[Full Story](../blob/main/$STORY_FILE)"
+fi
+```
+
+**3. BMAD Workflow Integration**
+
+Modify BMAD workflows to sync after story creation/updates:
+
+```yaml
+# .bmad/bmm/config.yaml (add)
+sync_to_github: true
+github_project_name: "Shtetl Development"
+```
+
+**Workflow Hook Points:**
+
+```
+/bmad:bmm:workflows:create-story
+  → Creates story-001.md
+  → Calls: scripts/sync-story-to-github.sh story-001.md
+  → Result: GitHub Issue #1 created in "To Do" column
+
+/bmad:bmm:workflows:story-ready
+  → Marks story as "in-progress" in sprint-status.yaml
+  → Calls: scripts/update-story-status.sh story-001 "In Progress"
+  → Result: Issue #1 moved to "In Progress" column
+
+/bmad:bmm:workflows:story-done
+  → Marks story as "done"
+  → Result: Issue #1 moved to "Done" column
+```
+
+**4. GitHub Projects Configuration**
+
+**Create Project:**
+```bash
+# One-time setup
+gh project create \
+  --owner yourusername \
+  --title "Shtetl Development" \
+  --format "Board"
+```
+
+**Columns:**
+- **Backlog** - Drafted stories not yet started
+- **Ready** - Stories ready for development
+- **In Progress** - Active development
+- **Review** - Code review / testing
+- **Done** - Completed stories
+
+**Labels:**
+- `story` - All user stories
+- `epic-1`, `epic-2`, etc. - Epic grouping
+- `story-001`, `story-002`, etc. - Story identifiers
+- `phase-mvp`, `phase-2`, etc. - Release phases
+
+**5. Sync Strategy (Bidirectional)**
+
+**Direction 1: BMAD → GitHub**
+- BMAD workflows create/update markdown files
+- Post-workflow script syncs to GitHub Issues: `scripts/sync-story-to-github.sh`
+- Issue body links back to markdown file for full details
+- Triggers: After `/bmad:bmm:workflows:create-story`, `story-ready`, `story-done`
+
+**Direction 2: GitHub → BMAD (Automated via GitHub Actions)**
+- When issue moved between columns in GitHub Projects
+- When issue closed/reopened in GitHub
+- **When issue edited in GitHub** (title, description changes)
+- GitHub Action detects change via webhook
+- Action updates `sprint-status.yaml` for status changes
+- Action updates `story-XXX.md` for content edits (title, description)
+- Action commits changes back to repository
+- Comments/discussions stay in GitHub (not synced to markdown)
+
+**Sync Implementation:**
+
+```yaml
+# .github/workflows/sync-github-to-bmad.yml
+name: Sync GitHub to BMAD
+
+on:
+  issues:
+    types: [closed, reopened, labeled, unlabeled, edited]
+  project_card:
+    types: [moved, created, deleted]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Sync status changes
+        if: github.event.action != 'edited'
+        run: |
+          STORY_KEY=$(gh issue view ${{ github.event.issue.number }} \
+            --json labels --jq '.labels[] | select(.name | startswith("story-")) | .name')
+
+          COLUMN=$(gh issue view ${{ github.event.issue.number }} \
+            --json projectCards --jq '.projectCards[0].column.name')
+
+          # Map column to status
+          case $COLUMN in
+            "Ready") STATUS="ready" ;;
+            "In Progress") STATUS="in-progress" ;;
+            "Review") STATUS="review" ;;
+            "Done") STATUS="done" ;;
+            *) STATUS="backlog" ;;
+          esac
+
+          python scripts/update-sprint-status.py "$STORY_KEY" "$STATUS"
+
+      - name: Sync content edits
+        if: github.event.action == 'edited'
+        run: |
+          STORY_KEY=$(gh issue view ${{ github.event.issue.number }} \
+            --json labels --jq '.labels[] | select(.name | startswith("story-")) | .name')
+
+          TITLE=$(gh issue view ${{ github.event.issue.number }} --json title --jq '.title')
+          BODY=$(gh issue view ${{ github.event.issue.number }} --json body --jq '.body')
+
+          # Update story markdown file with new title/description
+          python scripts/update-story-content.py "$STORY_KEY" "$TITLE" "$BODY"
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/sprint-artifacts/
+          git commit -m "chore: sync story changes from GitHub (#${{ github.event.issue.number }})" || exit 0
+          git push
+```
+
+**Python Helper Scripts:**
+
+```python
+#!/usr/bin/env python3
+# scripts/update-sprint-status.py
+# Updates story status in sprint-status.yaml
+
+import sys
+import yaml
+
+story_key = sys.argv[1]
+new_status = sys.argv[2]
+
+with open('docs/sprint-artifacts/sprint-status.yaml', 'r') as f:
+    data = yaml.safe_load(f)
+
+# Update status for matching story
+for story in data.get('development_status', []):
+    if story.get('story_key') == story_key:
+        story['status'] = new_status
+        break
+
+with open('docs/sprint-artifacts/sprint-status.yaml', 'w') as f:
+    yaml.dump(data, f, default_flow_style=False)
+```
+
+```python
+#!/usr/bin/env python3
+# scripts/update-story-content.py
+# Updates story markdown file with edits from GitHub Issue
+
+import sys
+import re
+
+story_key = sys.argv[1]
+new_title = sys.argv[2]
+new_body = sys.argv[3]
+
+story_file = f'docs/sprint-artifacts/{story_key}.md'
+
+# Read existing story file
+with open(story_file, 'r') as f:
+    content = f.read()
+
+# Update title (first H1 header)
+content = re.sub(r'^# .*$', f'# {new_title}', content, count=1, flags=re.MULTILINE)
+
+# Update description section
+# Extract description from GitHub issue body (before "---" separator)
+description = new_body.split('---')[0].strip()
+
+# Replace description section
+content = re.sub(
+    r'(## Description\n\n).*?(\n\n## )',
+    rf'\1{description}\2',
+    content,
+    flags=re.DOTALL
+)
+
+# Write updated content back
+with open(story_file, 'w') as f:
+    f.write(content)
+
+print(f'Updated {story_file} with changes from GitHub')
+```
+
+**Sync Scope and Limitations:**
+
+**What Syncs from GitHub → BMAD:**
+- ✅ **Title edits** → Updates `# Title` in story markdown
+- ✅ **Description edits** → Updates `## Description` section
+- ✅ **Status changes** (column moves) → Updates `sprint-status.yaml`
+- ✅ **Issue close/reopen** → Updates status to "done" or reopens
+
+**What Does NOT Sync from GitHub → BMAD:**
+- ❌ **Acceptance Criteria** → Too structured, cannot parse from GitHub issue body
+- ❌ **Technical Specifications** → Complex markdown sections, stays in BMAD only
+- ❌ **Dev Notes** → Development learnings recorded in BMAD, not synced
+- ❌ **Code Review Comments** → Stays in BMAD story file
+- ❌ **Task Lists** → BMAD tracks subtasks, GitHub shows high-level only
+- ❌ **Issue Comments** → Collaboration stays in GitHub, not written to markdown
+
+**Rationale for Partial Sync:**
+BMAD story files have rich, structured sections (Acceptance Criteria, Technical Approach, Dependencies, Dev Notes, Review sections) that cannot be reliably parsed from free-form GitHub issue text. Attempting full bidirectional sync of complex content would lead to data loss or corruption.
+
+**Recommended Usage Pattern:**
+1. **Create stories in BMAD** (`/bmad:bmm:workflows:create-story`) → Full structured template
+2. **Collaborate in GitHub Projects** → Visual kanban, comments, discussions, assignees
+3. **Quick edits in GitHub** → Title/description changes sync back to BMAD
+4. **Technical edits in BMAD** → Update acceptance criteria, technical specs, dev notes locally
+5. **Re-sync to GitHub** → Run `scripts/sync-story-to-github.sh` to push BMAD changes
+
+**Conflict Resolution:**
+- **BMAD markdown files are authoritative** for structured content (acceptance criteria, technical details, dev notes)
+- **GitHub Projects is authoritative** for status tracking (backlog, in-progress, done) and collaboration (comments, assignees)
+- If both updated simultaneously: GitHub status wins, BMAD technical content wins
+- GitHub Actions will overwrite BMAD title/description if edited in GitHub
+- To prevent overwrites: Edit technical details in BMAD, keep title/description edits in GitHub minimal
+
+**6. Story Lifecycle Example**
+
+```
+1. PM: /bmad:bmm:workflows:create-story
+   → Creates: docs/sprint-artifacts/story-001.md
+   → Syncs to: GitHub Issue #1 (Backlog column)
+   → Labels: story, epic-1, story-001
+
+2. Dev: /bmad:bmm:workflows:story-ready
+   → Updates: sprint-status.yaml (status: ready)
+   → Syncs to: GitHub Issue #1 → moves to "Ready" column
+
+3. Dev: /bmad:bmm:workflows:dev-story
+   → Updates: sprint-status.yaml (status: in-progress)
+   → Syncs to: GitHub Issue #1 → moves to "In Progress"
+   → Assigns: Current user as assignee
+
+4. Dev commits code:
+   → Commit message: "feat: implement story-001 (#1)"
+   → Links PR to Issue #1 automatically
+
+5. Dev: /bmad:bmm:workflows:story-done
+   → Updates: story-001.md (marks DoD complete)
+   → Syncs to: GitHub Issue #1 → moves to "Done"
+   → Closes: Issue #1 (optional)
+```
+
+**7. Project Structure**
+
+```
+shtetl/
+├── .github/
+│   └── workflows/
+│       └── sync-stories.yml      # CI automation (optional)
+├── scripts/
+│   ├── sync-story-to-github.sh   # Sync single story
+│   ├── update-story-status.sh    # Update issue status
+│   └── sync-all-stories.sh       # Bulk sync (one-time)
+├── docs/
+│   └── sprint-artifacts/
+│       ├── story-001.md
+│       ├── story-002.md
+│       └── sprint-status.yaml
+└── .bmad/
+    └── bmm/
+        └── config.yaml           # sync_to_github: true
+```
+
+**Implementation:**
+
+**MVP Scope:**
+- Manual sync script: `scripts/sync-story-to-github.sh`
+- One-way sync: BMAD → GitHub Issues
+- Status updates: Ready, In Progress, Done
+- Labels: story, epic, story-key
+
+**Post-MVP Enhancements:**
+- Automated sync via git hooks or CI/CD
+- Bidirectional sync (GitHub status → sprint-status.yaml)
+- GitHub Actions workflow to auto-sync on commit
+- Rich issue templates matching story structure
+- Epic-level GitHub Milestones
+- Automated PR linking via story keys
+
+**Example Script Implementation:**
+
+```bash
+#!/bin/bash
+# scripts/sync-story-to-github.sh
+
+set -e
+
+STORY_FILE=$1
+
+if [ ! -f "$STORY_FILE" ]; then
+  echo "Error: Story file not found: $STORY_FILE"
+  exit 1
+fi
+
+# Extract metadata from markdown frontmatter or headers
+STORY_KEY=$(basename $STORY_FILE .md)
+TITLE=$(grep -m1 "^# " $STORY_FILE | sed 's/^# //')
+EPIC=$(grep "^Epic:" $STORY_FILE | cut -d: -f2 | xargs || echo "unassigned")
+STATUS=$(grep "^Status:" $STORY_FILE | cut -d: -f2 | xargs || echo "backlog")
+
+# Extract description (first paragraph after title)
+DESCRIPTION=$(awk '/^# /,/^## /' $STORY_FILE | tail -n +2 | head -n -1)
+
+# Build issue body with link to full story
+ISSUE_BODY="$DESCRIPTION
+
+---
+
+**Full Story:** [View in repository](../blob/main/$STORY_FILE)
+**Epic:** $EPIC
+**Story Key:** $STORY_KEY
+"
+
+# Check if issue already exists
+ISSUE_NUMBER=$(gh issue list --label "$STORY_KEY" --json number --jq '.[0].number')
+
+if [ -z "$ISSUE_NUMBER" ]; then
+  echo "Creating new GitHub Issue for $STORY_KEY..."
+  gh issue create \
+    --title "$TITLE" \
+    --body "$ISSUE_BODY" \
+    --label "story,$EPIC,$STORY_KEY" \
+    --project "Shtetl Development"
+  echo "✓ Created Issue for $STORY_KEY"
+else
+  echo "Updating existing GitHub Issue #$ISSUE_NUMBER for $STORY_KEY..."
+  gh issue edit $ISSUE_NUMBER \
+    --title "$TITLE" \
+    --body "$ISSUE_BODY"
+  echo "✓ Updated Issue #$ISSUE_NUMBER"
+fi
+
+# Update status column based on story status
+case $STATUS in
+  "ready")
+    gh issue edit $ISSUE_NUMBER --add-project "Shtetl Development" --column "Ready"
+    ;;
+  "in-progress")
+    gh issue edit $ISSUE_NUMBER --add-project "Shtetl Development" --column "In Progress"
+    ;;
+  "done")
+    gh issue edit $ISSUE_NUMBER --add-project "Shtetl Development" --column "Done"
+    gh issue close $ISSUE_NUMBER
+    ;;
+  *)
+    gh issue edit $ISSUE_NUMBER --add-project "Shtetl Development" --column "Backlog"
+    ;;
+esac
+```
+
+**Consequences:**
+
+**Positive:**
+- ✅ Visual project management via GitHub Projects
+- ✅ Team collaboration with comments and discussions
+- ✅ Markdown stories remain portable and version-controlled
+- ✅ Integration with PRs and code review workflow
+- ✅ No additional tool subscriptions (GitHub already used)
+- ✅ Works with BMAD workflows (minimal changes needed)
+
+**Negative:**
+- ⚠️ Requires GitHub CLI (`gh`) installation
+- ⚠️ Manual script execution unless automated via hooks
+- ⚠️ Potential sync drift if status updated in both places
+- ⚠️ Additional maintenance overhead for sync scripts
+
+**Technical Challenges:**
+- **Sync Conflicts:** If status changed in GitHub and BMAD simultaneously
+- **Label Management:** Keeping epic/story labels consistent
+- **Issue Templates:** Ensuring GitHub Issue format matches story structure
+- **Bulk Operations:** Syncing many existing stories at once
+
+**Risk Mitigation:**
+- Start with one-way sync (BMAD → GitHub) to avoid conflicts
+- Use story-key label as unique identifier for issue matching
+- Provide bulk sync script for initial migration: `scripts/sync-all-stories.sh`
+- Document sync process clearly in project README
+- Make sync opt-in via config flag: `sync_to_github: true`
+
+**Testing Strategy:**
+- Test sync with sample stories in test repository
+- Verify label creation and assignment
+- Test status transitions (Backlog → Ready → In Progress → Done)
+- Validate issue linking with commit messages and PRs
+- Test edge cases: missing metadata, duplicate issues
+
+**Success Criteria:**
+- 100% of stories created by BMAD appear in GitHub Projects
+- Status updates sync within 1 minute (manual) or on commit (automated)
+- Team can manage project entirely from GitHub Projects UI
+- Markdown files remain complete record of story technical details
+- No duplicate issues created for same story
+
+**Alternative Considered:**
+
+**Option: Abandon BMAD Stories, Use GitHub Issues Only**
+- **Rejected because:**
+  - Lose rich markdown formatting and technical detail
+  - Stories not portable outside GitHub
+  - BMAD workflows deeply integrated with markdown files
+  - Harder for AI agents to read/update GitHub Issues vs markdown
+
+**Chosen hybrid approach** preserves BMAD's strengths (detailed technical docs) while gaining GitHub's strengths (collaboration and visibility).
+
+**Related Tools:**
+- GitHub CLI: `gh` (already installed: v2.45.0)
+- BMAD Workflows: create-story, story-ready, dev-story, story-done
+- Git Hooks: Can trigger sync on commit (future enhancement)
+
 ---
 
 _Generated by BMad Architecture Workflow v1.0_
 _Date: 2025-11-17_
-_Updated: 2025-11-17 (Added AI-First Development section)_
+_Updated: 2025-11-17 (Added AI-First Development, Print Template Designer, and GitHub Projects Integration)_
 _For: Shtetl Platform_
 _Project Type: Greenfield, Multi-Tenant SaaS_
 _Development Methodology: BMAD v6 with AI-Assisted Development_

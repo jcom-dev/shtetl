@@ -1,0 +1,78 @@
+# generated: 2025-11-17
+# project: shtetl
+# project_key: shtetl
+# tracking_system: file-system
+# story_location: docs/sprint-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-17
+project: shtetl
+project_key: shtetl
+tracking_system: file-system
+story_location: docs/sprint-artifacts
+
+development_status:
+  # Epic 1: Development Environment & Project Foundation
+  epic-1: backlog
+  1-1-multi-repository-structure-setup: backlog
+  1-2-coder-workspace-template: backlog
+  1-3-api-contract-design-all-3-services: backlog
+  1-4-domain-sample-data-fixtures: backlog
+  1-5-mock-api-servers-realistic-responses: backlog
+  1-6-shared-primitive-system-architecture: backlog
+  1-7-monaco-editor-wrapper-component: backlog
+  1-8-database-schema-design-multi-tenant: backlog
+  1-9-authentication-with-clerk: backlog
+  1-10-full-ci-cd-pipeline: backlog
+  1-11-monitoring-observability: backlog
+  1-12-testing-framework-setup: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Zmanim Engine (Rabbinic Authority Interface)
+  # Note: Stories not yet detailed in epics.md
+  epic-2: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Minyan Scheduling (Shul Admin Interface)
+  # Note: Stories not yet detailed in epics.md
+  epic-3: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Kehilla API & Web Interface
+  # Note: Stories not yet detailed in epics.md
+  epic-4: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Kehilla Mobile App
+  # Note: Stories not yet detailed in epics.md
+  epic-5: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: PDF Generation & Document Rendering
+  # Note: Stories not yet detailed in epics.md
+  epic-6: backlog
+  epic-6-retrospective: optional
