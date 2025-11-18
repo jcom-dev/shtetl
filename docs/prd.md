@@ -81,7 +81,7 @@ Success for Shtetl means communities experience **reliable, accurate schedules**
 **Platform Success Metrics:**
 - At least 5 synagogues actively maintain schedules through the platform within 6 months
 - 70%+ of active kehilla members subscribe to personalized minyan or shiur alerts
-- At least one rabbinic authority publishes a calendar stream through Zmanim Engine Builder
+- At least one rabbinic authority publishes a calendar stream through Zmanim Provider Builder
 - Automation hooks power at least one real-world facility action (e.g., HVAC scheduling) per participating synagogue
 
 **Quality Indicators:**
@@ -102,7 +102,7 @@ The MVP focuses on **core scheduling capabilities** that enable 3-5 synagogues t
 
 **Two Distinct Administrative UIs:**
 
-**1. Zmanim Engine Builder (Rabbinic Authority Technical Interface)**
+**1. Zmanim Provider Builder (Rabbinic Authority Technical Interface)**
 - Purpose: Enable recognized halachic authorities to create and publish comprehensive Jewish calendar calculation engines
 - Target Users: Technically sophisticated users (rabbinic authorities with astronomical knowledge, technical advisors)
 - Scope: Complete Jewish calendar calculation system encompassing both **times** and **dates/events**
@@ -145,7 +145,7 @@ Core Capabilities:
 - At least 5 Shuls actively maintain their schedules through the platform
 - Congregants rely on the mobile app or alerts for daily minyan attendance
 - Automation hooks are powering at least one real-world facility action per participating Shul
-- At least one rabbinic authority publishes calendar stream through Zmanim Engine Builder
+- At least one rabbinic authority publishes calendar stream through Zmanim Provider Builder
 - Feedback indicates improved schedule confidence
 
 **Explicitly Out of Scope for MVP:**
@@ -257,7 +257,7 @@ This guarantees complete schedules and prevents errors.
 4. **Domain Expert Validation (Design Partner Program)**
    - **Beis Mordechai (Manchester)** - Primary design partner for Shul Admin UI
    - **2-3 additional Shuls** with diverse patterns (Chassidic, Yeshivish, Modern Orthodox, Sephardic)
-   - **1-2 rabbinic authorities** for Zmanim Engine Builder pilot
+   - **1-2 rabbinic authorities** for Zmanim Provider Builder pilot
    - Side-by-side validation: Original PDF/data vs. Generated output
    - Gabbai/authority usability testing for independent maintenance
 
@@ -323,7 +323,7 @@ Shul-Specific Configuration (Independent per tenant)
 
 **Permission Matrix:**
 
-| Role | Zmanim Engine Builder | Shul Admin UI | Kehilla API | Cross-Tenant Access |
+| Role | Zmanim Provider Builder | Shul Admin UI | Kehilla API | Cross-Tenant Access |
 |------|----------------------|---------------|-------------|---------------------|
 | **platform_admin** | Full access | Full access (all Shuls) | Full access | Yes (support) |
 | **rabbinic_authority** | Full access | N/A | Read own streams | No |
@@ -476,7 +476,7 @@ Shtetl serves three distinct user personas with fundamentally different needs. U
 
 ### Design Principles by Persona
 
-**1. Rabbinic Authorities (Zmanim Engine Builder)**
+**1. Rabbinic Authorities (Zmanim Provider Builder)**
 
 Visual Personality: **Technical, Precise, Academic**
 - Dark theme optimized for long formula editing sessions
@@ -542,7 +542,7 @@ Key Interactions:
 4. Receive push notification at 7:00am: "Shacharit at 7:30am (Beis Mordechai)"
 
 **Flow 3: Authority Publishes Calendar Stream**
-1. Open Zmanim Engine Builder → "Create New Stream"
+1. Open Zmanim Provider Builder → "Create New Stream"
 2. Name: "Rabbi Cohen Manchester 5786" → Select methodology: "GRA calculations"
 3. Monaco editor opens with formula template
 4. Define alot calculation: `alot = sunrise - degrees(16.1)` (with autocomplete)
@@ -565,7 +565,7 @@ Key Interactions:
 
 This section defines **WHAT capabilities** the product must have. Every capability discussed in vision, scope, domain requirements, and project-specific sections is represented as a Functional Requirement below.
 
-**Coverage Check:** FRs cover Zmanim Engine Builder, Shul Admin UI, Kehilla API, mobile apps, and all integrations discussed in MVP scope.
+**Coverage Check:** FRs cover Zmanim Provider Builder, Shul Admin UI, Kehilla API, mobile apps, and all integrations discussed in MVP scope.
 
 ### User Account & Access Management
 
@@ -577,7 +577,7 @@ This section defines **WHAT capabilities** the product must have. Every capabili
 **FR6:** Users can belong to multiple Shuls with different roles in each
 **FR7:** Users can designate a primary Shul for default views
 
-### Zmanim Engine Builder (Rabbinic Authority Interface)
+### Zmanim Provider Builder (Rabbinic Authority Interface)
 
 **FR8:** Rabbinic authorities can create new calendar calculation streams
 **FR9:** Authorities can define daily zmanim calculations using Zmanim Calculation DSL

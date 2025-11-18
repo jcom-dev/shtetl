@@ -23,9 +23,9 @@ This document provides the complete epic and story breakdown for shtetl, decompo
 - All service API scaffolds with mock implementations
 - Duration: Foundation for all other work
 
-**Epic 2: Zmanim Engine (Rabbinic Authority Interface)**
+**Epic 2: Zmanim Provider (Rabbinic Authority Interface)**
 - Technical DSL for calendar calculations
-- Monaco editor integration
+- Lightweight formula input with autocomplete
 - Calendar stream publishing with audit trails
 - Parallel with: Epic 3, 4, 5, 6 (using scaffolded APIs)
 
@@ -68,7 +68,7 @@ Based on PRD analysis, here are all 100 functional requirements that must be cov
 - FR6: Users can belong to multiple Shuls with different roles
 - FR7: Users can designate a primary Shul for default views
 
-### Zmanim Engine Builder (FR8-FR20)
+### Zmanim Provider Builder (FR8-FR20)
 - FR8: Rabbinic authorities can create new calendar calculation streams
 - FR9: Authorities can define daily zmanim calculations using DSL
 - FR10: System supports multiple halachic calculation opinions
@@ -91,7 +91,7 @@ Based on PRD analysis, here are all 100 functional requirements that must be cov
 - FR25: Administrators can create minyan instances
 - FR26: Administrators can configure minyan metadata
 - FR27: Administrators can create scheduling rules using DSL
-- FR28: System provides Monaco editor with autocomplete
+- FR28: System provides formula input with autocomplete
 - FR29: System auto-suggests calendar primitives
 - FR30: Administrators can define custom Shul-specific primitives
 - FR31: System enforces primitive inheritance rules
@@ -114,7 +114,7 @@ Based on PRD analysis, here are all 100 functional requirements that must be cov
 - FR46: System auto-loads city primitives
 - FR47: Primitives cascade with inheritance
 - FR48: Lower-level admins can add but not remove inherited primitives
-- FR49: Monaco autocomplete displays applicable primitives
+- FR49: Autocomplete displays applicable primitives
 - FR50: System validates primitive references in rules
 
 ### Congregant Access (FR51-FR64)
@@ -189,8 +189,8 @@ This map shows which epic addresses which functional requirements:
 - Enables: FR74 (Clerk auth), FR78-FR83 (multi-tenancy), FR94-FR100 (system admin)
 - Direct Coverage: FR99, FR100 (monitoring, backups)
 
-**Epic 2 (Zmanim Engine):** FR8-FR20
-- Complete coverage of Zmanim Engine Builder requirements
+**Epic 2 (Zmanim Provider):** FR8-FR20
+- Complete coverage of Zmanim Provider Builder requirements
 - Rabbinic authority interface and calendar stream publishing
 
 **Epic 3 (Minyan Scheduling):** FR21-FR50, FR65-FR70
@@ -515,46 +515,48 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.7: Monaco Editor Wrapper Component
+### Story 1.7: Formula Input Component with Autocomplete
 
 **As a** developer implementing Epic 2 or Epic 3,
-**I want** a reusable Monaco editor component,
+**I want** a reusable formula input component with autocomplete,
 **So that** both DSLs share consistent UX without duplicating code.
 
 **Acceptance Criteria:**
 
-**Given** both DSLs need Monaco editor
-**When** wrapper component is created
-**Then** React component exists at `shtetl-web/src/components/MonacoEditor.tsx`
+**Given** both DSLs need single-line formula input with autocomplete
+**When** component is created
+**Then** React component exists at `shtetl-web/src/components/FormulaInput.tsx`
 
 **And** component provides:
-- Props: `value`, `onChange`, `language`, `readOnly`, `height`
-- Autocomplete support (via `CompletionItemProvider`)
-- Syntax highlighting configuration
-- Error/warning markers
+- Props: `value`, `onChange`, `getSuggestions`, `onValidate`, `placeholder`
+- Autocomplete dropdown using Downshift `useCombobox` hook
+- Keyboard navigation (Arrow keys, Enter to select, Escape to close)
+- Fuzzy matching for suggestions
+- Inline validation with visual feedback (red border for errors)
 - Theme support (light/dark)
-- Keyboard shortcuts (Cmd+S for save)
 
 **And** component is documented:
 - TypeScript interface for props
 - Example usage in Storybook
-- Custom language registration guide
+- Guide for creating custom suggestion providers
 
 **And** tested:
 - Renders without errors
 - onChange fires on text edit
-- Autocomplete dropdown appears on Ctrl+Space
+- Autocomplete dropdown appears on typing
+- Keyboard navigation works correctly
 - Works in both light and dark theme
 
 **Prerequisites:** Story 1.1 (web repo exists)
 
 **Technical Notes:**
-- Use `@monaco-editor/react` package
-- Export reusable `registerLanguage()` helper
-- Include placeholder for custom language definitions
+- Use `downshift` package with `useCombobox` hook
+- Use `@floating-ui/react` for dropdown positioning
+- Export reusable `SuggestionProvider` interface
 - Store in shared components directory
-- Epic 2 will add Zmanim language definition
-- Epic 3 will add Minyan language definition
+- Epic 2 will add Zmanim suggestion provider
+- Epic 3 will add Minyan scheduling suggestion provider
+- Lightweight alternative to Monaco (~14KB vs ~2MB)
 
 ---
 
@@ -906,7 +908,7 @@ services/zmanim/
 
 **Next Steps:**
 When ready to continue, the remaining epics will be:
-- Epic 2: Zmanim Engine (Rabbinic Authority Interface)
+- Epic 2: Zmanim Provider (Rabbinic Authority Interface)
 - Epic 3: Minyan Scheduling (Shul Admin Interface)
 - Epic 4: Kehilla API & Web Interface
 - Epic 5: Kehilla Mobile App

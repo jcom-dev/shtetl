@@ -18,7 +18,7 @@ Shtetl is a free, open-source platform that unifies Jewish community communicati
 **Core Domain Challenge:** Shtetl operates at the intersection of orthodox community management, multi-tenant SaaS, and precision time-based scheduling. The complexity stems from enabling extreme customization (each Shul has unique requirements) while maintaining halachic accuracy and serving non-technical users.
 
 **Key Innovation:** Two distinct administrative UIs, each with its own specialized DSL:
-- **Zmanim Engine Builder** - Technical interface for creating calculation algorithms
+- **Zmanim Provider Builder** - Technical interface for creating calculation algorithms
 - **Shul Admin UI** - Non-technical interface for building minyan schedules
 
 Beyond scheduling, Shtetl offers comprehensive Shul management tools for tracking membership, aliyos, simchas, and yahrzeits. By providing each Shul with its own controlled space while enabling unified access through mobile apps, SMS updates, text-to-speech call-in numbers, MCP integrations, and automation hooks, Shtetl eliminates fragmented communication channels.
@@ -52,7 +52,7 @@ Shtetl is a modular, open-source platform that preserves Shul autonomy while ena
 ### Hierarchical Architecture
 
 ```
-Zmanim Engine Builder (Rabbinic Authorities)
+Zmanim Provider Builder (Rabbinic Authorities)
     ↓ publishes Calendar Streams
 Regional Authoritative Zmanim/Calendar Data
     ↓ consumed by Shuls
@@ -87,7 +87,7 @@ Congregants (Mobile Apps, SMS, Web)
 - **Multi-Tenant SaaS** with complete Shul autonomy
 - **Tree-based rule configuration** with real-time validation
 - **Dual DSL system** - one for calculations, one for scheduling
-- **Monaco editor** with intelligent autocomplete
+- **Downshift-based formula input** with intelligent autocomplete
 - **React-PDF** for Hebrew document generation
 - **Delegation to authoritative sources** (KosherJava/Hebcal as inspiration)
 
@@ -162,7 +162,7 @@ This is NOT government regulation but rather a hierarchical authority system:
 
 #### Two Distinct Administrative UIs
 
-**1. Zmanim Engine Builder (Rabbinic Authority Technical Interface)**
+**1. Zmanim Provider Builder (Rabbinic Authority Technical Interface)**
 
 - **Purpose:** Enable recognized halachic authorities and their technical advisors to create and publish comprehensive Jewish calendar calculation engines including all times, dates, and events
 - **Target Users:** Technically sophisticated users (rabbinic authorities with astronomical knowledge, technical advisors, experts in halachic timekeeping)
@@ -252,7 +252,7 @@ This is NOT government regulation but rather a hierarchical authority system:
   - Cannot override or delete platform-controlled global primitives (ensures consistency)
   - Can optionally hide country/state/city primitives if not applicable
 - Real-time validation ensuring 100% schedule coverage
-- Monaco editor with intelligent autocomplete showing available primitives based on context
+- Formula input with intelligent autocomplete showing available primitives based on context
 
 **Key Features:**
 - **Base Calendar Selection:** Choose which authoritative calendar stream to follow
@@ -274,7 +274,7 @@ This is NOT government regulation but rather a hierarchical authority system:
 - **Validation Engine:** Real-time coverage validation - ensures every non-optional minyan has time for every day of the season
 - **PDF Generation:** Produce formatted timetables matching community standards (Hebrew RTL text, multi-minyan layouts like "8:30* / 8:00 / 7:40")
 
-**Key Distinction:** The Zmanim Engine Builder creates the *source calculation streams*, while the Shul Admin UI *consumes* those streams and builds minyan schedules from them. Each has its own specialized DSL optimized for its purpose.
+**Key Distinction:** The Zmanim Provider Builder creates the *source calculation streams*, while the Shul Admin UI *consumes* those streams and builds minyan schedules from them. Each has its own specialized DSL optimized for its purpose.
 
 ---
 
@@ -295,7 +295,7 @@ Shtetl MVP is successful when:
 - Congregants rely on the mobile app or alerts for daily minyan attendance
 - Automation hooks are powering at least one real-world facility action per participating Shul
 - Feedback indicates improved schedule confidence
-- At least one rabbinic authority publishes calendar stream through Zmanim Engine Builder
+- At least one rabbinic authority publishes calendar stream through Zmanim Provider Builder
 
 ---
 
@@ -337,7 +337,7 @@ Shul
 
 ### Technology Stack
 
-- **Frontend:** React + Monaco Editor (DSL IDE with autocomplete)
+- **Frontend:** React + Downshift (lightweight formula autocomplete)
 - **Mobile:** React Native for cross-platform mobile apps
 - **Backend:** Golang with modular service architecture, PEG parser for DSLs
   - **Rationale:** Strong typing makes codebase more AI-friendly for AI-assisted development and maintenance; superior performance for concurrent operations; excellent for building robust DSL parsers; explicit error handling improves code quality
@@ -377,7 +377,7 @@ Shul
 - Execute rules to generate full season schedule
 - Implement PDF template matching Beis Mordechai example
 - Hebrew text support (RTL rendering)
-- Basic Zmanim Engine Builder UI (formula input, validation)
+- Basic Zmanim Provider Builder UI (formula input, validation)
 - Output: Generated PDF timetable + foundation for authority calculations
 
 **Phase 3: Testing & Pilot (Weeks 7-8)**
@@ -385,7 +385,7 @@ Shul
 - Visual regression testing (output matches input)
 - Coverage validation testing
 - User acceptance testing with gabbai
-- Pilot Zmanim Engine Builder with one rabbinic authority
+- Pilot Zmanim Provider Builder with one rabbinic authority
 
 ### Post-MVP Expansion
 - Each additional Shul: ~1-2 weeks (assuming similar patterns)
@@ -397,7 +397,7 @@ Shul
 
 ### Required Expertise
 - **Backend:** Go, MongoDB, parser design (PEG/ANTLR), Hebrew calendar libraries
-- **Frontend:** React, tree UI, Monaco editor, drag-and-drop
+- **Frontend:** React, tree UI, Downshift autocomplete, drag-and-drop
 - **Domain:** Jewish calendar, astronomical halacha, Shul operations, Hebrew typography
 - **Testing:** Visual regression, RTL validation, UAT with gaboim and rabbinic authorities
 
@@ -414,7 +414,7 @@ Publishing incorrect zmanim is considered a serious halachic breach that could:
 - Lead to abandonment of the system
 
 **Therefore:**
-- Calculations must be delegated to authoritative sources or created by recognized experts using Zmanim Engine Builder
+- Calculations must be delegated to authoritative sources or created by recognized experts using Zmanim Provider Builder
 - Use KosherJava/Hebcal as reference/inspiration (not necessarily direct dependencies)
 - Any user customizations must be clearly additive/transparent (offsets, not formula replacement)
 - Validation and preview mechanisms are essential
@@ -466,7 +466,7 @@ Publishing incorrect zmanim is considered a serious halachic breach that could:
 **Design Partner Program:**
 - **Beis Mordechai (Manchester)** - Primary design partner for Shul Admin UI
 - **2-3 additional Shuls** with diverse patterns (Chassidic, Yeshivish, Modern Orthodox, Sephardic)
-- **1-2 rabbinic authorities** for Zmanim Engine Builder pilot
+- **1-2 rabbinic authorities** for Zmanim Provider Builder pilot
 - Side-by-side validation: Original PDF/data vs. Generated output
 - Gabbai/authority usability testing for independent maintenance
 
@@ -504,7 +504,7 @@ Shtetl transforms into the vibrant digital heartbeat of global Jewish life — a
 
 ### Key Assumptions
 - Shuls are willing to centralize schedules if they retain autonomy over their space and branding
-- Rabbinic authorities are willing to publish calendar streams through Zmanim Engine Builder
+- Rabbinic authorities are willing to publish calendar streams through Zmanim Provider Builder
 - Community members will adopt mobile/apps and alert subscriptions if information remains accurate and timely
 - Volunteer developers will contribute integrations if the project offers clear APIs and governance
 
@@ -519,7 +519,7 @@ Shtetl transforms into the vibrant digital heartbeat of global Jewish life — a
 
 ### Document Generation Standards
 - **React-PDF** - Modern, open-source PDF generation for web/mobile
-- **Monaco Editor** - VS Code's editor engine for DSL/code editing with autocomplete
+- **Downshift** - Lightweight headless autocomplete library for formula input
 - **Right-to-Left (RTL) Text Support** - Proper Hebrew text rendering
 
 ### Multi-Tenant SaaS Patterns
@@ -531,7 +531,7 @@ Shtetl transforms into the vibrant digital heartbeat of global Jewish life — a
 - [KosherJava Zmanim API](https://kosherjava.com/zmanim-project/) - Open source zmanim library (LGPL 2.1)
 - [Hebcal API](https://www.hebcal.com/) - REST API for zmanim calculations
 - [React-PDF](https://react-pdf.org/) - PDF generation library with RTL support
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - VS Code editor engine
+- [Downshift](https://www.downshift-js.com/) - Lightweight autocomplete library
 - Multi-Tenant SaaS Architecture Patterns (Microsoft Azure docs)
 - Document Generation Best Practices (Windward, Docupilot)
 
@@ -543,12 +543,12 @@ Shtetl transforms into the vibrant digital heartbeat of global Jewish life — a
 
 **Web Research Conducted:**
 1. Multi-tenant SaaS configuration patterns → Shared database with RLS recommended
-2. Template builders for non-technical users → Monaco editor + constrained customization
+2. Template builders for non-technical users → Downshift autocomplete + constrained customization
 3. Zmanim calculation APIs → KosherJava (157+ calculations), Hebcal REST API
 
 **Key Technical Findings:**
 - React-PDF supports Hebrew RTL text rendering
-- Monaco editor provides autocomplete and syntax highlighting out-of-box
+- Downshift provides headless autocomplete with excellent accessibility
 - Go PEG parsers (participle) suitable for DSL implementation
 
 ### Critical User Insights
@@ -562,7 +562,7 @@ Shtetl transforms into the vibrant digital heartbeat of global Jewish life — a
 3. **"Tree structure: Shacharit → First Minyan → Rules for Sunday, Rosh Chodesh, etc. With validation that creates minyan time for whole year."**
    - Defined core architecture: tree + coverage validation
 
-4. **"Zmanim Engine Builder needs to handle all different algorithms not only for times but for days such as Yom Tov, fast days and all other events that make up a Jewish calendar."**
+4. **"Zmanim Provider Builder needs to handle all different algorithms not only for times but for days such as Yom Tov, fast days and all other events that make up a Jewish calendar."**
    - Expanded scope to complete calendar calculation system, not just daily times
 
 ### Example: Beis Mordechai Manchester

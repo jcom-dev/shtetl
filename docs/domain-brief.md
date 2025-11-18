@@ -20,7 +20,7 @@ Shtetl faces a unique domain challenge at the intersection of orthodox community
 
 5. **Document Generation Challenge** - Output must match existing PDF timetables with Hebrew RTL text, multi-minyan formatting (8:30* / 8:00 / 7:40), and location markers, while being generated from web/mobile platforms without Word licensing.
 
-**Recommended Architecture:** Tree-based rule configuration with real-time validation, Monaco editor with autocomplete for DSL rules, delegated zmanim calculations, and React-PDF for Hebrew document generation. MVP timeline: 8 weeks to working system with Beis Mordechai Manchester as design partner.
+**Recommended Architecture:** Tree-based rule configuration with real-time validation, Downshift-based formula input with autocomplete for DSL rules, delegated zmanim calculations, and React-PDF for Hebrew document generation. MVP timeline: 8 weeks to working system with Beis Mordechai Manchester as design partner.
 
 ## Domain Overview
 
@@ -149,7 +149,7 @@ This is a voluntary, community-based system with soft governance through traditi
 
 **Document Generation Standards:**
 - **React-PDF** - Modern, open-source PDF generation for web/mobile
-- **Monaco Editor** - VS Code's editor engine for DSL/code editing with autocomplete
+- **Downshift** - Lightweight headless autocomplete library for formula input
 - **Right-to-Left (RTL) Text Support** - Proper Hebrew text rendering
 
 **Multi-Tenant SaaS Patterns:**
@@ -186,7 +186,7 @@ Shul
 5. **Coverage Calculator** - Real-time feedback on which days are missing times
 
 **Technology Stack:**
-- **Frontend:** React + Monaco Editor (DSL IDE with autocomplete)
+- **Frontend:** React + Downshift (lightweight formula autocomplete)
 - **Backend:** Go with PEG parser for rule DSL
 - **Database:** PostgreSQL with JSONB (tree structure support, ACID compliance, multi-tenant RLS)
 - **Calendar:** Hebrew calendar libraries for primitive evaluation
@@ -227,7 +227,7 @@ Shul
 
 **Required Expertise:**
 - Go backend development (parser, rule engine, PostgreSQL)
-- React development (tree UI, Monaco integration)
+- React development (tree UI, Downshift integration)
 - Hebrew text rendering (RTL, Unicode, fonts)
 - PDF generation (layout, formatting, multi-page)
 
@@ -314,7 +314,7 @@ Shtetl balances this by:
 1. **Tree structure** provides visual organization and clear mental model
 2. **Simple DSL** allows flexible rule expression without coding
 3. **Validation engine** prevents incomplete configurations
-4. **Monaco editor** provides IDE-like experience for non-developers
+4. **Downshift autocomplete** provides intuitive input experience for non-developers
 
 **Competitive Differentiation:**
 - **Open source** (vs. proprietary Shul management software)
@@ -438,7 +438,7 @@ Shtetl balances this by:
 1. Hierarchical tree UI (Minyan Type → Instance → Rules)
 2. Real-time validation engine with coverage calculator
 3. Primitive system (built-in + custom)
-4. Simple rule DSL with Monaco editor + autocomplete
+4. Simple rule DSL with Downshift-based formula input + autocomplete
 5. PDF generation matching Beis Mordechai layout
 6. Zmanim CSV import
 
@@ -466,7 +466,7 @@ Shtetl balances this by:
 ### Required Expertise
 
 - **Backend:** Go, MongoDB, parser design, Hebrew calendar
-- **Frontend:** React, tree UI, Monaco editor, drag-and-drop
+- **Frontend:** React, tree UI, Downshift autocomplete, drag-and-drop
 - **Domain:** Jewish calendar, Shul operations, Hebrew typography
 - **Testing:** Visual regression, RTL validation, UAT with gaboim
 
@@ -518,7 +518,7 @@ Shtetl balances this by:
 - [KosherJava Zmanim API](https://kosherjava.com/zmanim-project/) - Open source zmanim library (LGPL 2.1)
 - [Hebcal API](https://www.hebcal.com/) - REST API for zmanim calculations
 - [React-PDF](https://react-pdf.org/) - PDF generation library with RTL support
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - VS Code editor engine
+- [Downshift](https://www.downshift-js.com/) - Lightweight autocomplete library
 
 ### Additional Resources
 
@@ -532,12 +532,12 @@ Shtetl balances this by:
 
 **Web Research Conducted:**
 1. Multi-tenant SaaS configuration patterns → Shared database with RLS recommended
-2. Template builders for non-technical users → Monaco editor + constrained customization
+2. Template builders for non-technical users → Downshift autocomplete + constrained customization
 3. Zmanim calculation APIs → KosherJava (157+ calculations), Hebcal REST API
 
 **Key Technical Findings:**
 - React-PDF supports Hebrew RTL text rendering
-- Monaco editor provides autocomplete and syntax highlighting out-of-box
+- Downshift provides headless autocomplete with excellent accessibility
 - Go PEG parsers (participle) suitable for DSL implementation
 
 ### Conversation Highlights

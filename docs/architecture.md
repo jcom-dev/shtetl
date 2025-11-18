@@ -91,7 +91,7 @@ go mod init github.com/yourusername/shtetl-api
 npm create vite@latest shtetl-web -- --template react-ts
 cd shtetl-web
 npm install
-npm install @monaco-editor/react
+npm install downshift @floating-ui/react
 npm install @clerk/clerk-react
 ```
 
@@ -110,7 +110,7 @@ npm install @clerk/clerk-expo
 | Category | Decision | Version | Rationale |
 | -------- | -------- | ------- | --------- |
 | Backend Language | Go | 1.25.4 | Strong typing (AI-friendly), excellent performance, great for DSL parsers, explicit error handling |
-| Frontend Framework | React | 19.2 | Component reusability, Monaco editor integration, large ecosystem |
+| Frontend Framework | React | 19.2 | Component reusability, lightweight autocomplete components, large ecosystem |
 | Build Tool (Web) | Vite | 7.2 | Fast dev server, modern bundling, excellent TypeScript support, ESM-only |
 | Mobile Framework | React Native (Expo) | SDK 54 | Cross-platform, rapid development, easier deployment via EAS, React Native 0.81 |
 | Primary Database | PostgreSQL | 18 | Relational integrity, JSONB for flexibility, improved I/O subsystem, excellent for multi-tenancy |
@@ -122,7 +122,7 @@ npm install @clerk/clerk-expo
 | API Pattern (Internal) | gRPC | - | High performance service-to-service communication, type safety |
 | DSL Parser | Go PEG (TBD) | - | participle or pigeon library for custom DSL parsing |
 | PDF Generation | React-PDF | latest | Hebrew RTL support, React component-based |
-| Code Editor | Monaco Editor | latest | VS Code engine, custom language support, autocomplete |
+| Formula Input | Downshift | latest | Lightweight autocomplete (~14KB), headless/customizable, excellent a11y |
 | Dev Environment | Coder (local) | latest | Standardized workspaces, zero config drift, AI-optimized |
 | Infrastructure as Code | AWS CDK | latest | TypeScript, type safety, AWS-native, better than Terraform for AWS-only |
 | CI/CD | GitHub Actions | - | Free for open source, integrated with GitHub, easy CDK deployment |
@@ -142,7 +142,7 @@ npm install @clerk/clerk-expo
 
 **Web Frontend (React 19.2 + TypeScript):**
 - **Build Tool:** Vite
-- **Editor:** @monaco-editor/react
+- **Formula Input:** downshift (useCombobox hook for single-line formula autocomplete)
 - **Auth:** @clerk/clerk-react
 - **HTTP Client:** fetch API or axios
 - **State Management:** React Context + hooks (expand to Zustand if needed)
@@ -326,13 +326,13 @@ DSL Syntax: To be determined through usability testing with gaboim
 **Critical Design Principles:**
 1. **Complete Separation:** No shared parsing infrastructure - different audiences, different needs
 2. **DSL Research Required:** Syntax must be validated with actual users before implementation
-3. **Monaco Integration:** Both DSLs get custom Monaco language support (syntax highlighting, autocomplete)
+3. **Lightweight Autocomplete:** Both DSLs use Downshift-based single-line formula input with context-aware suggestions
 4. **Version Control:** All DSL text is stored, versioned, and auditable
 5. **Abstraction Layer:** Service architecture supports future DSL syntax changes without breaking APIs
 
 **Implementation Approach:**
 - Go PEG parser libraries (participle or pigeon)
-- Custom Monaco language definitions
+- Downshift useCombobox for autocomplete dropdowns
 - Real-time validation as users type
 - Preview/approval workflow before publishing
 
@@ -379,7 +379,7 @@ CREATE TABLE primitive_inheritance (
 **Resolution Logic:**
 1. Shul registers with location (country, state, city)
 2. System auto-loads all applicable inherited primitives
-3. Monaco autocomplete shows available primitives in context
+3. Formula input autocomplete shows available primitives in context
 4. Shul can add custom primitives (e.g., "Shul Anniversary")
 5. Enforcement: Lower levels CANNOT delete inherited primitives
 
@@ -478,7 +478,7 @@ func (v *CoverageValidator) Validate(
 ```
 
 **Real-time UI Integration:**
-- Monaco editor integration: Validate on every keystroke
+- Formula input validation: Validate on every keystroke
 - Visual feedback: "✓ 100% coverage" or "⚠️ 15 days missing times"
 - Detailed report: Show which days are missing for which minyanim
 - Prevent publishing until 100% coverage achieved
@@ -620,14 +620,14 @@ shtetl-api/
 shtetl-web/
 ├── src/
 │   ├── features/
-│   │   ├── zmanim-builder/         # Zmanim Engine Builder UI
+│   │   ├── zmanim-builder/         # Zmanim Provider Builder UI
 │   │   │   ├── components/
 │   │   │   │   ├── FormulaEditor.tsx
 │   │   │   │   ├── StreamPublisher.tsx
 │   │   │   │   └── ValidationPanel.tsx
-│   │   │   ├── editor/             # Monaco DSL editor
-│   │   │   │   ├── ZmanimLanguage.ts
-│   │   │   │   └── ZmanimEditor.tsx
+│   │   │   ├── formula-input/      # Downshift-based formula input
+│   │   │   │   ├── ZmanimSuggestions.ts
+│   │   │   │   └── ZmanimFormulaInput.tsx
 │   │   │   └── api/
 │   │   │       └── zmanimApi.ts
 │   │   │
@@ -636,9 +636,9 @@ shtetl-web/
 │   │       │   ├── ShulDashboard.tsx
 │   │       │   ├── MinyanManager.tsx
 │   │       │   └── PDFPreview.tsx
-│   │       ├── editor/             # Monaco DSL editor
-│   │       │   ├── SchedulingLanguage.ts
-│   │       │   └── SchedulingEditor.tsx
+│   │       ├── formula-input/      # Downshift-based formula input
+│   │       │   ├── SchedulingSuggestions.ts
+│   │       │   └── SchedulingFormulaInput.tsx
 │   │       ├── tree-builder/       # Visual minyan tree UI
 │   │       │   ├── MinyanTree.tsx
 │   │       │   ├── RuleBuilder.tsx
@@ -703,6 +703,317 @@ shtetl-mobile/
 ├── tsconfig.json
 └── README.md
 ```
+
+### Poly-Repo Architecture Specification
+
+#### Overview
+
+Shtetl uses a **poly-repo (multi-repository)** architecture where each major component lives in its own independent repository.
+
+**Primary Rationale: AI-Assisted Development Context Management**
+
+The main driver for poly-repo is to keep each repository's codebase small enough for effective AI-assisted development using the BMAD (BMad Method for Agile Development) methodology. When using AI coding assistants like Claude Code:
+
+- **Context window limits** - AI assistants have limited context windows; smaller repos ensure the entire codebase can be understood
+- **BMAD workflow optimization** - Each repo maintains its own `.bmad/` configuration, allowing focused sprint planning and story execution per bounded context
+- **Faster AI responses** - Less code to analyze means quicker, more accurate AI assistance
+- **Clearer AI instructions** - Domain-specific context (e.g., "this is the mobile app") improves AI comprehension
+
+Secondary benefits include team autonomy, independent deployment, and clear ownership boundaries.
+
+#### Repository Registry
+
+| Repository | Purpose | Language | Deployment Target |
+|------------|---------|----------|-------------------|
+| `shtetl` | Master orchestration repo (BMAD, docs, planning) | Markdown/YAML | N/A (orchestration) |
+| `shtetl-api` | Backend microservices (Zmanim, Shul, Kehilla) | Go 1.25.4 | AWS Lambda |
+| `shtetl-web` | Admin web application (Zmanim Builder, Shul Admin) | TypeScript/React | S3 + CloudFront |
+| `shtetl-mobile` | Congregant mobile app (iOS/Android) | TypeScript/React Native | App Store, Play Store |
+| `shtetl-infra` | Infrastructure as Code + Integration Tests | TypeScript (CDK) | AWS |
+
+#### Inter-Repository Dependencies
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    shtetl (master)                  │
+│         BMAD + Docs + Planning + Orchestration      │
+│                                                     │
+│  submodules/                                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
+│  │ shtetl-web  │  │shtetl-mobile│  │shtetl-infra │ │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘ │
+│         │                │                │        │
+│         │  REST/gRPC     │  REST          │        │
+│         ▼                ▼                │        │
+│  ┌─────────────────────────────────────┐  │        │
+│  │           shtetl-api                │  │        │
+│  │  ┌─────────┐ ┌─────┐ ┌─────────┐   │  │        │
+│  │  │ Zmanim  │ │Shul │ │ Kehilla │   │  │        │
+│  │  └─────────┘ └─────┘ └─────────┘   │  │        │
+│  └─────────────────┬───────────────────┘  │        │
+│                    │                      │        │
+│                    └──────────────────────┘        │
+│                    Deploys all services            │
+└─────────────────────────────────────────────────────┘
+```
+
+#### Repository Boundaries & Ownership
+
+**shtetl-api** (Backend Team)
+- **Owns:** All business logic, data models, API contracts, database schema
+- **Publishes:** OpenAPI specs, protobuf definitions, database migrations
+- **Consumes:** Nothing (root dependency)
+- **CI/CD:** Deploys all 3 services as independent Lambda functions
+
+**shtetl-web** (Frontend Team)
+- **Owns:** Admin UI components, feature implementations, web-specific logic
+- **Publishes:** Nothing (leaf dependency)
+- **Consumes:** API contracts from `shtetl-api` (OpenAPI → TypeScript types)
+- **CI/CD:** Deploys to S3/CloudFront
+
+**shtetl-mobile** (Mobile Team)
+- **Owns:** Mobile UI, offline caching, push notifications
+- **Publishes:** Nothing (leaf dependency)
+- **Consumes:** API contracts from `shtetl-api` (OpenAPI → TypeScript types)
+- **CI/CD:** Deploys via Expo EAS to app stores
+
+**shtetl-infra** (DevOps/Platform Team)
+- **Owns:** All AWS infrastructure definitions
+- **Publishes:** Environment configurations, secrets references
+- **Consumes:** Deployment artifacts from all other repos
+- **CI/CD:** Deploys infrastructure changes, coordinates cross-repo deployments
+
+#### Code Sharing Strategy
+
+**Approach: Contract-Based Integration (No Shared Code Libraries)**
+
+Rather than sharing code across repos, Shtetl shares **contracts**:
+
+1. **API Contracts** - OpenAPI specs and protobuf definitions in `shtetl-api`
+2. **Type Generation** - Frontend repos generate TypeScript types from contracts
+3. **No Shared npm Packages** - Avoids versioning complexity and diamond dependencies
+
+```bash
+# In shtetl-web or shtetl-mobile
+npm run generate-types  # Fetches OpenAPI from shtetl-api, generates types
+```
+
+**Type Generation Tooling:**
+```json
+// package.json script in frontend repos
+{
+  "scripts": {
+    "generate-types": "openapi-typescript ../shtetl-api/services/shul/api/openapi.yaml -o src/types/shul-api.ts && openapi-typescript ../shtetl-api/services/kehilla/api/openapi.yaml -o src/types/kehilla-api.ts"
+  }
+}
+```
+
+#### Version Coordination
+
+**Semantic Versioning per Repository:**
+- Each repo maintains independent semver versions
+- Breaking API changes in `shtetl-api` require major version bump
+- Frontend repos pin to compatible API versions
+
+**API Version Strategy:**
+```
+/api/v1/shuls         # Current stable
+/api/v2/shuls         # New version (during migration)
+```
+
+**Coordinated Releases:**
+- Breaking changes require synchronized deployment
+- Use GitHub releases with consistent tagging: `v1.2.3`
+- Changelog per repo documents breaking changes
+
+#### Cross-Repository Development Workflow
+
+**Local Development Setup:**
+```bash
+# Clone all repos into same parent directory
+git clone git@github.com:shtetl-platform/shtetl-api.git
+git clone git@github.com:shtetl-platform/shtetl-web.git
+git clone git@github.com:shtetl-platform/shtetl-mobile.git
+git clone git@github.com:shtetl-platform/shtetl-infra.git
+
+# Or use Coder workspace (recommended)
+coder create shtetl-dev --template shtetl
+# All repos cloned automatically
+```
+
+**Making Cross-Repo Changes:**
+1. Start in `shtetl-api` - implement backend changes, update API contracts
+2. Generate types in frontend repos
+3. Implement frontend changes
+4. Open PRs in each affected repo with cross-references
+5. Merge in dependency order: api → web/mobile → infra
+
+#### CI/CD Pipeline Structure
+
+**Per-Repository Pipelines:**
+
+```yaml
+# shtetl-api/.github/workflows/ci.yml
+name: API CI/CD
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.4'
+      - run: go test ./...
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: # Deploy to AWS Lambda
+```
+
+**Cross-Repo Deployment Coordination:**
+- `shtetl-infra` contains deployment orchestration
+- GitHub Actions in `shtetl-infra` can trigger deployments across repos
+- Use GitHub repository dispatch for coordinated releases
+
+#### Repository Configuration Standards
+
+**Required Files in Each Repo:**
+```
+repo/
+├── .github/
+│   ├── workflows/           # CI/CD pipelines
+│   ├── CODEOWNERS           # Review requirements
+│   └── pull_request_template.md
+├── .gitignore
+├── README.md               # Setup instructions, architecture overview
+├── CONTRIBUTING.md         # Contribution guidelines
+├── LICENSE                 # MIT for open source
+└── CHANGELOG.md            # Version history
+```
+
+**Branch Protection Rules (all repos):**
+- Require PR reviews (1 reviewer minimum)
+- Require status checks to pass
+- Require branches to be up to date
+- No force pushes to `main`
+
+#### Dependency Management
+
+**Backend (Go):**
+```bash
+# In shtetl-api
+go mod tidy              # Clean dependencies
+go mod verify            # Verify checksums
+```
+
+**Frontend (npm):**
+```bash
+# In shtetl-web and shtetl-mobile
+npm ci                   # Clean install from lockfile
+npm audit                # Security audit
+npm outdated             # Check for updates
+```
+
+**Dependency Update Strategy:**
+- Weekly automated dependency updates via Dependabot
+- Security patches applied immediately
+- Major version updates reviewed manually
+
+#### Advantages of Poly-Repo for Shtetl
+
+1. **Optimized AI Context** - Each repo fits within AI assistant context windows for effective BMAD workflows
+2. **Focused BMAD Configuration** - Each repo has its own `.bmad/` with domain-specific agents, workflows, and sprint artifacts
+3. **Independent Deployment** - Deploy backend without touching frontend
+4. **Clear Ownership** - Each team owns their repository completely
+5. **Technology Flexibility** - Go backend, TypeScript frontends
+6. **Simpler CI/CD** - Each repo has focused, fast pipelines
+7. **Smaller Clone Size** - Contributors clone only what they need
+
+#### BMAD Configuration: Master Repo Only
+
+BMAD is installed **only in the master orchestration repo** (`shtetl/`), not in individual submodule repos. This is a deliberate architectural decision.
+
+```
+shtetl/                           # Master repo - BMAD lives here
+├── .bmad/
+│   ├── bmm/
+│   │   ├── config.yaml          # Project-wide settings
+│   │   ├── agents/              # All available AI agents
+│   │   └── workflows/           # Sprint and development workflows
+│   └── docs/
+├── docs/
+│   ├── architecture.md          # This document
+│   ├── prd.md
+│   ├── epics.md
+│   └── sprint-artifacts/        # Stories and sprint status
+├── submodules/
+│   ├── shtetl-api/              # Code only, no BMAD
+│   ├── shtetl-web/              # Code only, no BMAD
+│   ├── shtetl-mobile/           # Code only, no BMAD
+│   └── shtetl-infra/            # CDK + integration tests, no BMAD
+└── README.md                    # Navigation hub
+```
+
+**Rationale for master-only BMAD:**
+
+1. **Single source of truth** - All planning artifacts (PRD, architecture, epics, stories) live in one place
+2. **Stories span repos** - Most features touch multiple submodules; master repo provides unified view
+3. **No sync complexity** - Avoids version drift and sync mechanisms between repos
+4. **Simpler maintenance** - One BMAD config to update, not five
+5. **Natural workflow** - Developers start Claude Code from master root, accessing both docs and all code
+
+**Submodule repos contain implementation only:**
+- Source code and tests
+- Repo-specific configuration (go.mod, package.json, etc.)
+- Minimal README pointing back to master for documentation
+
+**Development workflow:**
+```bash
+# Always start from master repo
+cd shtetl/
+claude  # Claude Code has access to .bmad/, docs/, AND all submodules/
+
+# Commits go to individual submodule repos
+cd submodules/shtetl-api/
+git add . && git commit -m "Implement feature X"
+```
+
+**Future consideration:** If individual repos grow large enough that AI context becomes constrained, revisit per-repo BMAD. Current scope (3 services, 2 frontends, 1 infra) works well with master-only approach.
+
+#### Mitigating Poly-Repo Challenges
+
+| Challenge | Mitigation |
+|-----------|------------|
+| Cross-repo changes are harder | Start Claude Code from master repo; all submodules accessible |
+| API contract drift | Generated types from OpenAPI specs with CI verification |
+| Inconsistent tooling | Shared configuration in `.github/` templates |
+| Discovery/navigation | Master repo README as navigation hub; submodule READMEs point back |
+| Coordinated releases | GitHub Actions repository dispatch |
+| BMAD context for submodules | Master-only BMAD with access to all submodules via recursive clone |
+
+#### Future Considerations
+
+**When to Extract New Repos:**
+- New bounded context emerges (e.g., analytics service)
+- Team split requires separate ownership
+- Different deployment cadence needed
+
+**Monorepo Migration Criteria:**
+If in the future we find:
+- >50% of changes span multiple repos
+- CI/CD coordination becomes painful
+- Type sharing becomes complex
+
+Then consider migrating to a monorepo with Turborepo or Nx.
 
 ## Data Architecture
 
@@ -1818,7 +2129,7 @@ func TestCoverageValidator_IdentifyGaps(t *testing.T) {
 
 **Consequences:**
 - Some duplicate parser infrastructure
-- Need to maintain two Monaco language definitions
+- Need to maintain two sets of autocomplete suggestions
 - More initial development work
 
 ### ADR-004: Full DSL from MVP (No JSON Interim)
@@ -1828,7 +2139,7 @@ func TestCoverageValidator_IdentifyGaps(t *testing.T) {
 **Rationale:**
 - DSL is core differentiator of Shtetl
 - Switching from JSON to DSL later would require data migration
-- Monaco editor provides excellent DSL editing experience
+- Lightweight formula input with autocomplete provides excellent UX for single-line formulas
 - Users expect powerful, flexible rule system from day 1
 - Validates core value proposition early
 

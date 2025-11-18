@@ -1,0 +1,187 @@
+<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Multi-Repository Structure Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-1-multi-repository-structure-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a clear multi-repo structure with initialized codebases</iWant>
+    <soThat>I can start contributing to the appropriate service immediately</soThat>
+    <tasks>
+      <task id="1" ac="1">Initialize shtetl-api backend repository
+        <subtask id="1.1">Create GitHub repository shtetl-api</subtask>
+        <subtask id="1.2">Initialize Go module: go mod init github.com/jcom-dev/shtetl-api</subtask>
+        <subtask id="1.3">Create service directory structure for zmanim, shul, kehilla</subtask>
+        <subtask id="1.4">Create minimal cmd/main.go for each service</subtask>
+        <subtask id="1.5">Create internal/, api/, pkg/ directories</subtask>
+        <subtask id="1.6">Add .gitignore for Go</subtask>
+        <subtask id="1.7">Add README.md with setup instructions</subtask>
+      </task>
+      <task id="2" ac="2">Initialize shtetl-web frontend repository
+        <subtask id="2.1">Create GitHub repository shtetl-web</subtask>
+        <subtask id="2.2">Initialize Vite + React 19 + TypeScript project</subtask>
+        <subtask id="2.3">Configure strict TypeScript in tsconfig.json</subtask>
+        <subtask id="2.4">Create folder structure: src/features/, src/shared/</subtask>
+        <subtask id="2.5">Verify initial build succeeds: npm run build</subtask>
+        <subtask id="2.6">Add README.md with setup instructions</subtask>
+      </task>
+      <task id="3" ac="3">Initialize shtetl-mobile repository
+        <subtask id="3.1">Create GitHub repository shtetl-mobile</subtask>
+        <subtask id="3.2">Initialize Expo + React Native + TypeScript project</subtask>
+        <subtask id="3.3">Create folder structure: src/screens/, src/components/, src/services/</subtask>
+        <subtask id="3.4">Configure app.json with proper Expo settings</subtask>
+        <subtask id="3.5">Verify initial build succeeds: npx expo start</subtask>
+        <subtask id="3.6">Add README.md with setup instructions</subtask>
+      </task>
+      <task id="4" ac="4">Configure submodules in main repository
+        <subtask id="4.1">Add shtetl-api as submodule: git submodule add</subtask>
+        <subtask id="4.2">Add shtetl-web as submodule</subtask>
+        <subtask id="4.3">Add shtetl-mobile as submodule</subtask>
+        <subtask id="4.4">Verify .gitmodules is correct</subtask>
+        <subtask id="4.5">Test cloning with --recursive flag</subtask>
+      </task>
+      <task id="5" ac="5">Documentation and verification
+        <subtask id="5.1">Review all README.md files for completeness</subtask>
+        <subtask id="5.2">Verify all repos can be cloned and initialized independently</subtask>
+        <subtask id="5.3">Update architecture.md if any structure changes needed</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Backend Repository (shtetl-api/) initialized with Go module, three service directories (zmanim, shul, kehilla), standard Go structure, and README.md</criterion>
+    <criterion id="2">Web Frontend Repository (shtetl-web/) initialized with Vite + React 19 + TypeScript, strict tsconfig, folder structure, and README.md</criterion>
+    <criterion id="3">Mobile Repository (shtetl-mobile/) initialized with Expo + React Native + TypeScript, folder structure, app.json, and README.md</criterion>
+    <criterion id="4">All repositories linked as submodules in main shtetl/ repo with proper .gitmodules configuration</criterion>
+    <criterion id="5">Documentation complete with READMEs explaining purpose, setup, and contribution guidelines</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Poly-Repo Architecture Specification</section>
+        <snippet>Primary rationale is AI context management for BMAD workflows. Each repo fits within AI assistant context windows. BMAD lives only in master repo.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Project Structure</section>
+        <snippet>Defines expected directory structures for shtetl-api (Go services), shtetl-web (React frontend), and shtetl-mobile (Expo app).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Technology Stack Details</section>
+        <snippet>Go 1.25.4 backend, React 19.2 + Vite 7.2 web, Expo SDK 54 + React Native 0.81 mobile.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Shtetl Epics</title>
+        <section>Story 1.1: Multi-Repository Structure Setup</section>
+        <snippet>Foundation story establishing poly-repo structure with initialized codebases for all three major components.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Shtetl PRD</title>
+        <section>Project Classification</section>
+        <snippet>Multi-tenant SaaS platform with three independent microservices using multi-repository approach.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <note>Foundation story - no existing code to reference. This story creates the initial repository structure.</note>
+      <existingSubmodules>
+        <submodule>
+          <path>submodules/shtetl-api</path>
+          <status>Empty (LICENSE only)</status>
+          <target>Go backend with services/zmanim, services/shul, services/kehilla</target>
+        </submodule>
+        <submodule>
+          <path>submodules/shtetl-web</path>
+          <status>Empty (LICENSE only)</status>
+          <target>Vite + React 19 + TypeScript frontend</target>
+        </submodule>
+        <submodule>
+          <path>submodules/shtetl-mobile</path>
+          <status>Empty (LICENSE only)</status>
+          <target>Expo + React Native + TypeScript mobile app</target>
+        </submodule>
+      </existingSubmodules>
+    </code>
+    <dependencies>
+      <note>No dependencies exist yet. This story will establish:</note>
+      <planned>
+        <ecosystem name="go">
+          <package>github.com/jcom-dev/shtetl-api (go.mod)</package>
+        </ecosystem>
+        <ecosystem name="node-web">
+          <package>react@19.2</package>
+          <package>vite@7.2</package>
+          <package>typescript</package>
+          <package>downshift</package>
+          <package>@floating-ui/react</package>
+          <package>@clerk/clerk-react</package>
+        </ecosystem>
+        <ecosystem name="node-mobile">
+          <package>expo@~54</package>
+          <package>react-native@0.81</package>
+          <package>typescript</package>
+          <package>@clerk/clerk-expo</package>
+        </ecosystem>
+      </planned>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Poly-repo structure - each repo contains only code, no BMAD config</constraint>
+    <constraint type="architecture">BMAD lives only in master shtetl/ repo for unified context</constraint>
+    <constraint type="architecture">Contract-based integration via OpenAPI specs, no shared code libraries</constraint>
+    <constraint type="naming">Go backend uses monorepo pattern within shtetl-api (multiple services, shared pkg/)</constraint>
+    <constraint type="versioning">Go 1.25.4, React 19.2, Vite 7.2, Expo SDK 54, React Native 0.81</constraint>
+    <constraint type="structure">Submodules must be in submodules/ directory within master repo</constraint>
+  </constraints>
+
+  <interfaces>
+    <note>No interfaces exist yet. This foundation story creates the repositories where interfaces will be defined in subsequent stories.</note>
+    <planned>
+      <interface>
+        <name>OpenAPI Specs</name>
+        <kind>REST API contract</kind>
+        <location>shtetl-api/services/*/api/openapi.yaml</location>
+        <purpose>Define API contracts for type generation in frontends</purpose>
+      </interface>
+      <interface>
+        <name>gRPC Protos</name>
+        <kind>gRPC service definition</kind>
+        <location>shtetl-api/services/*/proto/*.proto</location>
+        <purpose>Internal service-to-service communication</purpose>
+      </interface>
+    </planned>
+  </interfaces>
+
+  <tests>
+    <standards>No test infrastructure exists yet. This story creates the repositories where tests will be added. Per architecture.md NFR-MAINT-1 and NFR-MAINT-2: Go backend must maintain 80%+ test coverage, critical paths require 95%+. Per NFR-MAINT-3: All DSL parsers must have comprehensive test suites.</standards>
+    <locations>
+      <location>shtetl-api/**/tests/ (Go tests)</location>
+      <location>shtetl-web/src/**/*.test.tsx (React tests)</location>
+      <location>shtetl-mobile/src/**/*.test.tsx (React Native tests)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify go.mod initializes correctly with go mod tidy</idea>
+      <idea ac="1">Verify each service main.go compiles: go build ./services/*/cmd</idea>
+      <idea ac="2">Verify npm install completes without errors</idea>
+      <idea ac="2">Verify npm run build succeeds</idea>
+      <idea ac="3">Verify npx expo start launches without errors</idea>
+      <idea ac="4">Verify git clone --recursive pulls all submodules</idea>
+      <idea ac="4">Verify .gitmodules contains correct paths and URLs</idea>
+      <idea ac="5">Verify each README.md contains required sections</idea>
+    </ideas>
+  </tests>
+</story-context>
