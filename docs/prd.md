@@ -130,7 +130,7 @@ Core Capabilities:
   - **Shul-Specific Primitives** (user-defined): Shul anniversary, local yahrzeits, custom events
 - Primitive inheritance rules (Global → Country → State → City → Shul) with enforcement
 - Real-time validation ensuring 100% schedule coverage
-- Monaco editor with intelligent autocomplete showing available primitives based on context
+- Downshift formula input with intelligent autocomplete showing available primitives based on context
 - Base calendar selection (choose authoritative calendar stream to follow)
 - Local customization (apply Shul-specific offsets and adjustments to base zmanim)
 - Hebrew RTL PDF generation (formatted timetables matching community standards)
@@ -212,7 +212,7 @@ Solution: Inherited primitive system where:
 - Country/State/City Primitives - auto-selected based on Shul location
 - Shul-Specific Primitives - user-defined (anniversaries, local events)
 - **Enforcement Rule:** Lower levels can add but NEVER remove inherited primitives
-- Monaco autocomplete shows only available primitives based on context
+- Downshift autocomplete shows only available primitives based on context
 
 This ensures consistency while enabling local customization.
 
@@ -364,7 +364,7 @@ MVP focuses on free/open-source model. Subscription tiers deferred to post-MVP b
 **Web Application (Admin Interfaces):**
 - Modern browsers: Chrome, Firefox, Safari, Edge (last 2 versions)
 - Responsive design: Desktop (1920x1080+), Tablet (768x1024+), Mobile web (375x667+)
-- Monaco Editor requires JavaScript enabled
+- Formula input requires JavaScript enabled
 - Hebrew text rendering requires Unicode font support
 
 **Mobile Application (Congregant Access):**
@@ -480,7 +480,7 @@ Shtetl serves three distinct user personas with fundamentally different needs. U
 
 Visual Personality: **Technical, Precise, Academic**
 - Dark theme optimized for long formula editing sessions
-- Monaco editor with syntax highlighting and inline documentation
+- Downshift formula input with context-aware autocomplete and inline documentation
 - Side-by-side preview (formula → calculated output)
 - Version diff view for comparing calculation methods
 - Clear attribution to halachic sources (footnotes, citations)
@@ -544,7 +544,7 @@ Key Interactions:
 **Flow 3: Authority Publishes Calendar Stream**
 1. Open Zmanim Provider Builder → "Create New Stream"
 2. Name: "Rabbi Cohen Manchester 5786" → Select methodology: "GRA calculations"
-3. Monaco editor opens with formula template
+3. Formula input opens with template suggestions
 4. Define alot calculation: `alot = sunrise - degrees(16.1)` (with autocomplete)
 5. Continue defining all zmanim → Click "Validate"
 6. System compares output vs. KosherJava → Shows accuracy report
@@ -602,7 +602,7 @@ This section defines **WHAT capabilities** the product must have. Every capabili
 **FR25:** Administrators can create minyan instances under each type (First Minyan, Second Minyan, etc.)
 **FR26:** Administrators can configure minyan metadata (location, optional flag, display order)
 **FR27:** Administrators can create scheduling rules using Minyan Scheduling DSL
-**FR28:** System provides Monaco editor with syntax highlighting and autocomplete for rule DSL
+**FR28:** System provides Downshift formula input with autocomplete for rule DSL
 **FR29:** System auto-suggests calendar primitives based on Shul's hierarchical context
 **FR30:** Administrators can define custom Shul-specific primitives (anniversaries, local events)
 **FR31:** System enforces primitive inheritance rules (cannot delete inherited global/regional primitives)
@@ -626,7 +626,7 @@ This section defines **WHAT capabilities** the product must have. Every capabili
 **FR46:** System auto-loads city primitives based on Shul location
 **FR47:** Primitives cascade with inheritance (Global → Country → State → City → Shul)
 **FR48:** Lower-level administrators can add but not remove inherited primitives
-**FR49:** Monaco autocomplete displays only applicable primitives based on context
+**FR49:** Downshift autocomplete displays only applicable primitives based on context
 **FR50:** System validates primitive references in rules (no orphaned references)
 
 ### Congregant (Kehilla) Access
@@ -716,7 +716,7 @@ This section defines **WHAT capabilities** the product must have. Every capabili
 **NFR-PERF-1:** Schedule queries (today's times) must respond within **500ms** at p95
 **NFR-PERF-2:** Coverage validation must complete within **2 seconds** for full season (365 days)
 **NFR-PERF-3:** PDF generation must complete within **5 seconds** for standard timetable (8 weeks)
-**NFR-PERF-4:** Monaco autocomplete suggestions must appear within **100ms** of keystroke
+**NFR-PERF-4:** Autocomplete suggestions must appear within **100ms** of keystroke
 **NFR-PERF-5:** Mobile app launch must display cached schedule within **1 second**
 
 **Database Query Performance**
@@ -856,7 +856,7 @@ This section defines **WHAT capabilities** the product must have. Every capabili
 **Error Prevention**
 
 **NFR-USE-5:** System must warn before deleting minyanim or rules (confirmation dialog)
-**NFR-USE-6:** Monaco editor must highlight syntax errors in real-time
+**NFR-USE-6:** Formula input must validate and highlight errors in real-time
 **NFR-USE-7:** Coverage validation must prevent accidental publishing of incomplete schedules
 **NFR-USE-8:** PDF preview must match final output exactly (WYSIWYG)
 
