@@ -237,7 +237,7 @@ This map shows which epic addresses which functional requirements:
 **When** repositories are created
 **Then** the following structure exists:
 - `shtetl-api/` with 3 service directories (zmanim, shul, kehilla)
-- `shtetl-web/` with Vite + React 19 + TypeScript initialized
+- `shtetl-web/` with Next.js + TypeScript initialized
 - `shtetl-mobile/` with Expo + React Native + TypeScript initialized
 
 **And** each Go service has:
@@ -274,7 +274,7 @@ This map shows which epic addresses which functional requirements:
 **When** developer runs `coder create shtetl-dev --template shtetl`
 **Then** workspace is created with:
 - PostgreSQL 18 running on port 5432
-- Redis 7.4 running on port 6379
+- Redis 8.4 running on port 6379
 - Go 1.25.4 installed
 - Node.js 24.x LTS installed
 - All 3 repos cloned automatically
@@ -302,13 +302,81 @@ This map shows which epic addresses which functional requirements:
 **Technical Notes:**
 - Create `.coder/shtetl-workspace.tf` template
 - Startup script: `.coder/startup.sh`
-- Use Docker images: postgres:18-alpine, redis:7.4-alpine
+- Use Docker images: postgres:18-alpine, redis:8.4-alpine
 - Environment variables in workspace template
 - Record 2-minute demo video showing `coder create` → working environment
 
 ---
 
-### Story 1.3: API Contract Design (All 3 Services)
+### Story 1.3: Full CI/CD Pipeline
+
+**As a** developer merging code,
+**I want** automated build, test, and deployment to staging,
+**So that** changes are validated and deployed without manual steps.
+
+**Acceptance Criteria:**
+
+**Given** code is pushed to GitHub
+**When** CI/CD pipeline runs
+**Then** GitHub Actions workflow includes:
+
+**Build Stage:**
+- Checkout code
+- Install Go 1.25.4
+- Install Node.js 24.x LTS
+- `go build` for all 3 services
+- `npm run build` for web (Next.js 16)
+- `npx expo export` for mobile (Expo SDK 54)
+- Artifacts uploaded
+
+**Test Stage:**
+- `go test ./...` for all services
+- `npm run test` for web (Vitest)
+- Linting: `golangci-lint`, `eslint`, `tsc --noEmit`
+- Coverage reports generated
+- Tests must pass 100%
+
+**Deploy to Staging Stage:**
+- AWS CDK `cdk synth`
+- AWS CDK `cdk deploy --require-approval never` (staging stack)
+- Deploy to AWS Lambda (all 3 services)
+- Deploy web to S3 + CloudFront
+- Run smoke tests against staging endpoints
+
+**Deploy to Production Stage:**
+- Manual approval required
+- AWS CDK deploy (production stack)
+- Blue/green deployment
+- Rollback capability
+
+**And** AWS CDK infrastructure includes:
+- Lambda functions for each service
+- API Gateway (REST + HTTP for gRPC over HTTP/2)
+- RDS PostgreSQL instance
+- ElastiCache Redis
+- CloudWatch Logs + Alarms
+- S3 bucket + CloudFront for web hosting
+
+**And** pipeline triggers:
+- On push to `dev` → deploy to dev environment
+- On push to `main` → deploy to staging
+- On git tag `v*` → deploy to production (with approval)
+- On pull request → build + test only (no deploy)
+
+**Prerequisites:** Story 1.1 (repos), Story 1.2 (Coder workspace)
+
+**Technical Notes:**
+- GitHub Actions workflow: `.github/workflows/ci-cd.yml`
+- AWS CDK in TypeScript: `infrastructure/` directory
+- Use AWS CDK v2
+- Secrets: Clerk keys, AWS credentials in GitHub Secrets
+- Dev URL: api-dev.shtetl.com
+- Staging URL: api-staging.shtetl.com
+- Production URL: api.shtetl.com
+
+---
+
+### Story 1.4: API Contract Design (All 3 Services)
 
 **As a** frontend or backend developer,
 **I want** complete API specifications before implementation starts,
@@ -359,7 +427,7 @@ This map shows which epic addresses which functional requirements:
 
 ---
 
-### Story 1.4: Domain Sample Data Fixtures
+### Story 1.5: Domain Sample Data Fixtures
 
 **As a** developer building UI or testing APIs,
 **I want** realistic sample data based on actual Shul schedules,
@@ -395,7 +463,7 @@ This map shows which epic addresses which functional requirements:
 - City (Manchester): LocalEvents
 - Shul (Beis Mordechai): ShulAnniversary, RabbiYahrtzeit
 
-**Prerequisites:** Story 1.3 (needs data model from contracts)
+**Prerequisites:** Story 1.4 (needs data model from contracts)
 
 **Technical Notes:**
 - Store in `fixtures/` directory
@@ -406,7 +474,7 @@ This map shows which epic addresses which functional requirements:
 
 ---
 
-### Story 1.5: Mock API Servers (Realistic Responses)
+### Story 1.6: Mock API Servers (Realistic Responses)
 
 **As a** frontend developer,
 **I want** mock API servers returning realistic data,
@@ -442,7 +510,7 @@ This map shows which epic addresses which functional requirements:
 - Hebrew calendar dates are accurate
 - Multi-tenant: Accepts any shul_id, returns fixture with that ID
 
-**Prerequisites:** Story 1.4 (sample data), Story 1.3 (contracts)
+**Prerequisites:** Story 1.5 (sample data), Story 1.4 (contracts)
 
 **Technical Notes:**
 - Implement in Go using same framework as real services
@@ -453,7 +521,7 @@ This map shows which epic addresses which functional requirements:
 
 ---
 
-### Story 1.6: Shared Primitive System Architecture
+### Story 1.7: Shared Primitive System Architecture
 
 **As a** developer working on Epic 2 or Epic 3,
 **I want** a clear design for the primitive system,
@@ -505,7 +573,7 @@ CREATE TABLE primitive_inheritance (
 - Ownership matrix (who can modify what)
 - Migration script creating tables
 
-**Prerequisites:** Story 1.3 (service boundaries defined)
+**Prerequisites:** Story 1.4 (service boundaries defined)
 
 **Technical Notes:**
 - Store design in `docs/architecture/primitives.md`
@@ -515,7 +583,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.7: Formula Input Component with Autocomplete
+### Story 1.8: Formula Input Component with Autocomplete
 
 **As a** developer implementing Epic 2 or Epic 3,
 **I want** a reusable formula input component with autocomplete,
@@ -560,7 +628,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.8: Database Schema Design (Multi-Tenant)
+### Story 1.9: Database Schema Design (Multi-Tenant)
 
 **As a** developer implementing data models,
 **I want** complete database schema with multi-tenancy patterns,
@@ -607,7 +675,7 @@ CREATE TABLE primitive_inheritance (
 - Migration scripts (numbered: 001_initial_schema.sql)
 - GORM model files in each service
 
-**Prerequisites:** Story 1.6 (primitive schema), Story 1.3 (data models from API)
+**Prerequisites:** Story 1.7 (primitive schema), Story 1.4 (data models from API)
 
 **Technical Notes:**
 - Use PostgreSQL 18 features (JSONB, POINT type, improved I/O subsystem)
@@ -618,7 +686,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.9: Authentication with Clerk
+### Story 1.10: Authentication with Clerk
 
 **As a** developer implementing protected endpoints,
 **I want** Clerk authentication integrated in all services,
@@ -635,7 +703,7 @@ CREATE TABLE primitive_inheritance (
 - Request context includes: UserID, ShulID, Role
 
 **And** authentication flow works:
-- Frontend: Clerk React component loads
+- Frontend: Clerk Next.js component loads
 - User signs in: Google or email/password
 - JWT token included in API requests (Authorization header)
 - Backend: Validates token, extracts claims
@@ -661,83 +729,15 @@ CREATE TABLE primitive_inheritance (
 - gabbai@beismordechai.com (shul_admin, shul_id=beis-mordechai)
 - user@beismordechai.com (kehilla, shul_id=beis-mordechai)
 
-**Prerequisites:** Story 1.1 (services exist), Story 1.8 (user data model)
+**Prerequisites:** Story 1.1 (services exist), Story 1.9 (user data model)
 
 **Technical Notes:**
 - Install `github.com/clerk/clerk-sdk-go/v2`
-- Install `@clerk/clerk-react` in web
+- Install `@clerk/nextjs` in web
 - Install `@clerk/clerk-expo` in mobile
 - Middleware: Verify JWT on every request except /health
 - Store Clerk keys in environment variables
 - Reference: PRD FR74, architecture.md auth section
-
----
-
-### Story 1.10: Full CI/CD Pipeline
-
-**As a** developer merging code,
-**I want** automated build, test, and deployment to staging,
-**So that** changes are validated and deployed without manual steps.
-
-**Acceptance Criteria:**
-
-**Given** code is pushed to GitHub
-**When** CI/CD pipeline runs
-**Then** GitHub Actions workflow includes:
-
-**Build Stage:**
-- Checkout code
-- Install Go 1.25.4
-- Install Node.js 24.x LTS
-- `go build` for all 3 services
-- `npm run build` for web (Vite 7.2)
-- `npx expo export` for mobile (Expo SDK 54)
-- Artifacts uploaded
-
-**Test Stage:**
-- `go test ./...` for all services
-- `npm run test` for web (Vitest)
-- Linting: `golangci-lint`, `eslint`, `tsc --noEmit`
-- Coverage reports generated
-- Tests must pass 100%
-
-**Deploy to Staging Stage:**
-- AWS CDK `cdk synth`
-- AWS CDK `cdk deploy --require-approval never` (staging stack)
-- Deploy to AWS Lambda (all 3 services)
-- Deploy web to S3 + CloudFront
-- Run smoke tests against staging endpoints
-
-**Deploy to Production Stage:**
-- Manual approval required
-- AWS CDK deploy (production stack)
-- Blue/green deployment
-- Rollback capability
-
-**And** AWS CDK infrastructure includes:
-- Lambda functions for each service
-- API Gateway (REST + HTTP for gRPC over HTTP/2)
-- RDS PostgreSQL instance
-- ElastiCache Redis
-- CloudWatch Logs + Alarms
-- S3 bucket + CloudFront for web hosting
-
-**And** pipeline triggers:
-- On push to `dev` → deploy to dev environment
-- On push to `main` → deploy to staging
-- On git tag `v*` → deploy to production (with approval)
-- On pull request → build + test only (no deploy)
-
-**Prerequisites:** Story 1.1 (repos), Story 1.8 (database), Story 1.9 (auth)
-
-**Technical Notes:**
-- GitHub Actions workflow: `.github/workflows/ci-cd.yml`
-- AWS CDK in TypeScript: `infrastructure/` directory
-- Use AWS CDK v2
-- Secrets: Clerk keys, AWS credentials in GitHub Secrets
-- Dev URL: api-dev.shtetl.com
-- Staging URL: api-staging.shtetl.com
-- Production URL: api.shtetl.com
 
 ---
 
@@ -787,7 +787,7 @@ CREATE TABLE primitive_inheritance (
 - P50, P95, P99 latency
 - Database connection pool usage
 
-**Prerequisites:** Story 1.10 (deployed to AWS)
+**Prerequisites:** Story 1.3 (CI/CD deployed to AWS)
 
 **Technical Notes:**
 - Install `github.com/rs/zerolog`
@@ -849,7 +849,7 @@ services/zmanim/
 - Integration test: Database test with test containers
 - Mock test: Service with mocked repository
 
-**Prerequisites:** Story 1.1 (code structure), Story 1.8 (database)
+**Prerequisites:** Story 1.1 (code structure), Story 1.9 (database)
 
 **Technical Notes:**
 - Use `testing.T` and `testing.M` for Go
@@ -868,9 +868,9 @@ services/zmanim/
 **Teams Unblocked:** All parallel epics can start after Epic 1 completes
 
 **Critical Path:**
-- Story 1.3 (API contracts) blocks all frontend work
-- Story 1.5 (mocks) unblocks Epic 4 & 5 immediately
-- Story 1.10 (CI/CD) enables continuous delivery for all teams
+- Story 1.3 (CI/CD) enables continuous delivery for all teams
+- Story 1.4 (API contracts) blocks all frontend work
+- Story 1.6 (mocks) unblocks Epic 4 & 5 immediately
 
 **Key Deliverables:**
 - ✅ Developer can contribute in 30 minutes (`coder create`)
@@ -899,10 +899,9 @@ services/zmanim/
 **Technology Stack (Latest Stable Versions):**
 - Go 1.25.4
 - Node.js 24.x LTS
-- React 19.2
+- Next.js 16
 - PostgreSQL 18
-- Redis 7.4
-- Vite 7.2
+- Redis 8.4
 - Expo SDK 54
 - GORM v2
 

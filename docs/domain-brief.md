@@ -186,7 +186,7 @@ Shul
 5. **Coverage Calculator** - Real-time feedback on which days are missing times
 
 **Technology Stack:**
-- **Frontend:** React + Downshift (lightweight formula autocomplete)
+- **Frontend:** Next.js + Downshift (lightweight formula autocomplete)
 - **Backend:** Go with PEG parser for rule DSL
 - **Database:** PostgreSQL with JSONB (tree structure support, ACID compliance, multi-tenant RLS)
 - **Calendar:** Hebrew calendar libraries for primitive evaluation
@@ -227,7 +227,7 @@ Shul
 
 **Required Expertise:**
 - Go backend development (parser, rule engine, PostgreSQL)
-- React development (tree UI, Downshift integration)
+- Next.js development (tree UI, Downshift integration)
 - Hebrew text rendering (RTL, Unicode, fonts)
 - PDF generation (layout, formatting, multi-page)
 
@@ -466,7 +466,7 @@ Shtetl balances this by:
 ### Required Expertise
 
 - **Backend:** Go, MongoDB, parser design, Hebrew calendar
-- **Frontend:** React, tree UI, Downshift autocomplete, drag-and-drop
+- **Frontend:** Next.js, tree UI, Downshift autocomplete, drag-and-drop
 - **Domain:** Jewish calendar, Shul operations, Hebrew typography
 - **Testing:** Visual regression, RTL validation, UAT with gaboim
 

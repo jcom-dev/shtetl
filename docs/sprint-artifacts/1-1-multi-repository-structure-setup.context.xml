@@ -25,7 +25,7 @@
       </task>
       <task id="2" ac="2">Initialize shtetl-web frontend repository
         <subtask id="2.1">Create GitHub repository shtetl-web</subtask>
-        <subtask id="2.2">Initialize Vite + React 19 + TypeScript project</subtask>
+        <subtask id="2.2">Initialize Next.js + TypeScript project</subtask>
         <subtask id="2.3">Configure strict TypeScript in tsconfig.json</subtask>
         <subtask id="2.4">Create folder structure: src/features/, src/shared/</subtask>
         <subtask id="2.5">Verify initial build succeeds: npm run build</subtask>
@@ -56,7 +56,7 @@
 
   <acceptanceCriteria>
     <criterion id="1">Backend Repository (shtetl-api/) initialized with Go module, three service directories (zmanim, shul, kehilla), standard Go structure, and README.md</criterion>
-    <criterion id="2">Web Frontend Repository (shtetl-web/) initialized with Vite + React 19 + TypeScript, strict tsconfig, folder structure, and README.md</criterion>
+    <criterion id="2">Web Frontend Repository (shtetl-web/) initialized with Next.js + TypeScript, strict tsconfig, folder structure, and README.md</criterion>
     <criterion id="3">Mobile Repository (shtetl-mobile/) initialized with Expo + React Native + TypeScript, folder structure, app.json, and README.md</criterion>
     <criterion id="4">All repositories linked as submodules in main shtetl/ repo with proper .gitmodules configuration</criterion>
     <criterion id="5">Documentation complete with READMEs explaining purpose, setup, and contribution guidelines</criterion>
@@ -74,13 +74,13 @@
         <path>docs/architecture.md</path>
         <title>Shtetl Architecture Document</title>
         <section>Project Structure</section>
-        <snippet>Defines expected directory structures for shtetl-api (Go services), shtetl-web (React frontend), and shtetl-mobile (Expo app).</snippet>
+        <snippet>Defines expected directory structures for shtetl-api (Go services), shtetl-web (Next.js frontend), and shtetl-mobile (Expo app).</snippet>
       </doc>
       <doc>
         <path>docs/architecture.md</path>
         <title>Shtetl Architecture Document</title>
         <section>Technology Stack Details</section>
-        <snippet>Go 1.25.4 backend, React 19.2 + Vite 7.2 web, Expo SDK 54 + React Native 0.81 mobile.</snippet>
+        <snippet>Go 1.25.4 backend, Next.js 16 web, Expo SDK 54 + React Native 0.81 mobile.</snippet>
       </doc>
       <doc>
         <path>docs/epics.md</path>
@@ -106,7 +106,7 @@
         <submodule>
           <path>submodules/shtetl-web</path>
           <status>Empty (LICENSE only)</status>
-          <target>Vite + React 19 + TypeScript frontend</target>
+          <target>Next.js + TypeScript frontend</target>
         </submodule>
         <submodule>
           <path>submodules/shtetl-mobile</path>
@@ -122,12 +122,12 @@
           <package>github.com/jcom-dev/shtetl-api (go.mod)</package>
         </ecosystem>
         <ecosystem name="node-web">
-          <package>react@19.2</package>
-          <package>vite@7.2</package>
+          <package>next@16</package>
+          <package>react@19</package>
           <package>typescript</package>
           <package>downshift</package>
           <package>@floating-ui/react</package>
-          <package>@clerk/clerk-react</package>
+          <package>@clerk/nextjs</package>
         </ecosystem>
         <ecosystem name="node-mobile">
           <package>expo@~54</package>
@@ -144,7 +144,7 @@
     <constraint type="architecture">BMAD lives only in master shtetl/ repo for unified context</constraint>
     <constraint type="architecture">Contract-based integration via OpenAPI specs, no shared code libraries</constraint>
     <constraint type="naming">Go backend uses monorepo pattern within shtetl-api (multiple services, shared pkg/)</constraint>
-    <constraint type="versioning">Go 1.25.4, React 19.2, Vite 7.2, Expo SDK 54, React Native 0.81</constraint>
+    <constraint type="versioning">Go 1.25.4, Next.js 16, Expo SDK 54, React Native 0.81</constraint>
     <constraint type="structure">Submodules must be in submodules/ directory within master repo</constraint>
   </constraints>
 
@@ -170,7 +170,7 @@
     <standards>No test infrastructure exists yet. This story creates the repositories where tests will be added. Per architecture.md NFR-MAINT-1 and NFR-MAINT-2: Go backend must maintain 80%+ test coverage, critical paths require 95%+. Per NFR-MAINT-3: All DSL parsers must have comprehensive test suites.</standards>
     <locations>
       <location>shtetl-api/**/tests/ (Go tests)</location>
-      <location>shtetl-web/src/**/*.test.tsx (React tests)</location>
+      <location>shtetl-web/src/**/*.test.tsx (Next.js tests)</location>
       <location>shtetl-mobile/src/**/*.test.tsx (React Native tests)</location>
     </locations>
     <ideas>

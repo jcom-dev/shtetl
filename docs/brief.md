@@ -337,7 +337,7 @@ Shul
 
 ### Technology Stack
 
-- **Frontend:** React + Downshift (lightweight formula autocomplete)
+- **Frontend:** Next.js + Downshift (lightweight formula autocomplete)
 - **Mobile:** React Native for cross-platform mobile apps
 - **Backend:** Golang with modular service architecture, PEG parser for DSLs
   - **Rationale:** Strong typing makes codebase more AI-friendly for AI-assisted development and maintenance; superior performance for concurrent operations; excellent for building robust DSL parsers; explicit error handling improves code quality
@@ -397,7 +397,7 @@ Shul
 
 ### Required Expertise
 - **Backend:** Go, MongoDB, parser design (PEG/ANTLR), Hebrew calendar libraries
-- **Frontend:** React, tree UI, Downshift autocomplete, drag-and-drop
+- **Frontend:** Next.js, tree UI, Downshift autocomplete, drag-and-drop
 - **Domain:** Jewish calendar, astronomical halacha, Shul operations, Hebrew typography
 - **Testing:** Visual regression, RTL validation, UAT with gaboim and rabbinic authorities
 

@@ -377,8 +377,8 @@ MVP focuses on free/open-source model. Subscription tiers deferred to post-MVP b
 **Backend APIs:**
 - RESTful API for web/mobile clients
 - gRPC for internal service-to-service communication
-- PostgreSQL 17 database
-- Redis 7.4 caching layer
+- PostgreSQL 18 database
+- Redis 8.4 caching layer
 
 **Accessibility:**
 - WCAG 2.1 Level AA compliance (goal for web interfaces)

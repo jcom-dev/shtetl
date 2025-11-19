@@ -9,7 +9,7 @@
 
 **🌟 The Digital Heartbeat of Jewish Life 🌟**
 
-*Unifying Jewish community communications into a centralized, intelligent hub*
+_Unifying Jewish community communications into a centralized, intelligent hub_
 
 [🚀 Get Started](#-quick-start) • [📖 Documentation](#-documentation) • [🤝 Contributing](#-contributing) • [💬 Community](#-community)
 
@@ -32,6 +32,7 @@ Shtetl enables each synagogue to configure highly complex, unique scheduling rul
 <td width="50%">
 
 #### 🎯 **Dual DSL System**
+
 - 📐 **Zmanim Provider Builder** - Technical interface for rabbinic authorities to create astronomical calculation algorithms
 - 🌳 **Minyan Scheduling DSL** - Non-technical tree-based interface for gaboim with visual rule builder + Downshift autocomplete
 - ✅ Each optimized for its audience's expertise level
@@ -40,6 +41,7 @@ Shtetl enables each synagogue to configure highly complex, unique scheduling rul
 <td width="50%">
 
 #### 🏗️ **Hierarchical Primitive Cascade**
+
 - 🌍 Global primitives (Yom Tov, Fast Days, Rosh Chodesh)
 - 🗺️ Auto-loaded regional primitives (UK Bank Holidays, US Federal Holidays)
 - 🏛️ Shul-specific custom primitives (anniversaries, local events)
@@ -51,6 +53,7 @@ Shtetl enables each synagogue to configure highly complex, unique scheduling rul
 <td width="50%">
 
 #### ✅ **Real-Time Coverage Validation**
+
 - 🔍 Validates every non-optional minyan has time for every day
 - ⚠️ Reports missing coverage: "15 days missing times for Shacharit"
 - 🚫 **Prevents publishing** until 100% coverage achieved
@@ -60,6 +63,7 @@ Shtetl enables each synagogue to configure highly complex, unique scheduling rul
 <td width="50%">
 
 #### 📱 **Multi-Channel Access**
+
 - 📱 Native mobile apps (iOS 14+, Android 10+)
 - 💬 SMS alerts & push notifications
 - 🌐 Web admin consoles (technical + non-technical)
@@ -126,9 +130,203 @@ graph LR
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Complete Developer Onboarding (Zero to Coding in 5 Minutes)
 
-...
+#### Step 1: Prerequisites (One-Time Setup)
+
+Install these tools once on your machine:
+
+**Docker Desktop:**
+
+- macOS: [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
+- Linux: `sudo apt-get install docker.io && sudo usermod -aG docker $USER` (log out/in after)
+- Windows: Docker Desktop with WSL2 backend
+
+**Coder CLI:**
+
+```bash
+# macOS
+brew install coder/coder/coder
+
+# Linux / Windows WSL2
+curl -fsSL https://coder.com/install.sh | sh
+```
+
+**Verify installations:**
+
+```bash
+docker --version
+coder version
+```
+
+#### Step 2: Clone Repository
+
+```bash
+git clone https://github.com/jcom-dev/shtetl.git
+cd shtetl
+```
+
+#### Step 3: First-Time Coder Setup
+
+Start the Coder server and register the workspace template:
+
+```bash
+# Terminal 1: Start Coder server (keep running)
+coder server
+
+# Terminal 2: Login and register template
+coder login http://localhost:3000    # Creates admin account on first run
+coder templates push shtetl --directory .coder
+```
+
+> **Note:** The Coder server must be running whenever you use Coder commands.
+
+#### Step 4: Add SSH Key to GitHub
+
+The workspace needs SSH access to clone repositories:
+
+```bash
+# Create workspace (will generate SSH key)
+coder create shtetl-dev --template shtetl
+
+# Get the public key
+coder ssh shtetl-dev -- "cat ~/.ssh/id_ed25519.pub 2>/dev/null || coder publickey"
+```
+
+1. Copy the key (starts with `ssh-ed25519`)
+2. Add to GitHub: https://github.com/settings/ssh/new
+3. Rebuild workspace to clone repos:
+
+```bash
+coder delete shtetl-dev --yes
+coder create shtetl-dev --template shtetl
+```
+
+#### Step 5: What Happens Automatically
+
+When the workspace is created:
+
+- ✅ Creates PostgreSQL 18 and Redis 8.4 containers
+- ✅ Installs Go 1.25.4 and Node.js 24.11.1
+- ✅ Clones all three service repositories
+- ✅ Installs all dependencies (`go mod download`, `npm install`)
+- ✅ Configures environment variables
+
+**Time:** 3-5 minutes
+
+#### Step 6: Access Workspace
+
+```bash
+# Open in VS Code (recommended)
+coder code shtetl-dev
+
+# Or SSH into workspace
+coder ssh shtetl-dev
+```
+
+#### Step 7: Services Auto-Start
+
+Services start automatically in a tmux session. To view them:
+
+```bash
+# Attach to tmux session to see service logs
+tmux attach -t shtetl
+
+# Switch between windows: Ctrl+B then window number (0-3)
+# Detach: Ctrl+B then D
+```
+
+**To start services manually** (if needed):
+
+```bash
+# From workspace root: /home/coder/workspace/shtetl
+
+# Terminal 1: Zmanim Service (REST 8101, gRPC 8102)
+cd submodules/shtetl-api/zmanim
+go run cmd/zmanim/main.go
+
+# Terminal 2: Shul Service (REST 8103, gRPC 8104)
+cd submodules/shtetl-api/shul
+go run cmd/shul/main.go
+
+# Terminal 3: Kehilla Service (REST 8105)
+cd submodules/shtetl-api/kehilla
+go run cmd/kehilla/main.go
+
+# Terminal 4: Web App (Next.js - port 8100)
+cd submodules/shtetl-web
+npm run dev
+```
+
+#### Step 8: Verify Everything Works
+
+```bash
+# Check service health
+curl http://localhost:8103/health  # Shul service
+curl http://localhost:8105/health  # Kehilla service
+
+# Open web app
+open http://localhost:8100
+
+# Test database
+psql postgresql://shtetl:shtetl_dev@localhost:5432/shtetl_dev -c "SELECT version();"
+
+# Test Redis
+redis-cli -h localhost -p 6379 ping  # Should return PONG
+```
+
+### Daily Workflow
+
+```bash
+# Start workspace (if stopped)
+coder start shtetl-dev
+
+# Open in VS Code
+coder code shtetl-dev
+
+# Stop workspace when done (saves resources)
+coder stop shtetl-dev
+```
+
+### Customizing Workspace (Advanced)
+
+Override repository URLs or branch when creating a workspace:
+
+```bash
+# Use a different branch for all repos
+coder create shtetl-dev --template shtetl \
+  --parameter shtetl_branch=feature/my-branch
+
+# Override specific repository URLs
+coder create shtetl-dev --template shtetl \
+  --parameter shtetl_branch=develop \
+  --parameter shtetl_api_repo=git@github.com:my-fork/shtetl-api.git
+```
+
+**Available parameters:**
+
+| Parameter           | Default                                       | Description                    |
+| ------------------- | --------------------------------------------- | ------------------------------ |
+| `shtetl_branch`     | `main`                                        | Branch to checkout for all repos |
+| `shtetl_repo`       | `git@github.com:jcom-dev/shtetl.git`          | Main repository URL            |
+| `shtetl_infra_repo` | `git@github.com:jcom-dev/shtetl-infra.git`    | Infrastructure repository URL  |
+| `shtetl_api_repo`   | `git@github.com:jcom-dev/shtetl-api.git`      | API services repository URL    |
+| `shtetl_web_repo`   | `git@github.com:jcom-dev/shtetl-web.git`      | Web application repository URL |
+| `shtetl_mobile_repo`| `git@github.com:jcom-dev/shtetl-mobile.git`   | Mobile app repository URL      |
+
+### 🎯 Key Benefits
+
+- **Container Isolation:** No conflicts with your host machine's Go/Node.js
+- **Reproducible:** Every developer gets identical environment
+- **Fast:** One command creates complete dev environment
+- **Zero Config:** No manual setup required
+
+### 📚 Detailed Documentation
+
+For troubleshooting, platform-specific notes, and advanced configuration:
+
+- [Coder Workspace Guide](.coder/README.md) - Comprehensive setup guide
+- [Architecture Documentation](docs/architecture.md) - System design and decisions
 
 ---
 
@@ -143,7 +341,7 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 │                        Frontend Clients                          │
 ├──────────────────┬───────────────────┬───────────────────────────┤
 │  Zmanim Provider │   Shul Admin UI   │    Kehilla Mobile App    │
-│  Builder (React) │    (React Web)    │   (React Native + Web)   │
+│  Builder (Next.js)│   (Next.js Web)   │   (React Native + Web)   │
 │  [Authorities]   │    [Gaboim]       │     [Congregants]        │
 └─────────┬────────┴─────────┬─────────┴────────────┬─────────────┘
           │                  │                      │
@@ -168,8 +366,8 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
         ┌────────────────────▼─────────────────────────────────────┐
         │              Data & Infrastructure Layer                  │
         ├───────────────────────────────────────────────────────────┤
-        │  PostgreSQL 17 (Multi-tenant with Row-Level Security)    │
-        │  Redis 7.4 (Caching: schedules, streams, primitives)     │
+        │  PostgreSQL 18 (Multi-tenant with Row-Level Security)    │
+        │  Redis 8.4 (Caching: schedules, streams, primitives)     │
         │  Clerk (Authentication & user management)                 │
         │  SMS/Email/Push providers (Notifications)                 │
         └───────────────────────────────────────────────────────────┘
@@ -194,14 +392,14 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 
 <div align="center">
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 🔍 **Phase 0: Discovery** | ✅ Complete | Product Brief, Domain Research, Technical Research |
-| 📋 **Phase 1: Planning** | ✅ Complete | PRD (100 FRs + 90 NFRs), Architecture, Domain Brief |
-| 🎨 **Phase 2: UX Design** | ⏳ Next | User flows, wireframes, high-fidelity mockups |
-| 🏗️ **Phase 3: Epic Breakdown** | ⏳ Planned | Epics and stories from PRD requirements |
-| 💻 **Phase 4: Implementation** | ⏳ Planned | Sprint-based development with AI assistance |
-| 🧪 **Phase 5: Beta Testing** | ⏳ Planned | Design partner pilot (5+ Shuls) |
+| Phase                          | Status      | Description                                         |
+| ------------------------------ | ----------- | --------------------------------------------------- |
+| 🔍 **Phase 0: Discovery**      | ✅ Complete | Product Brief, Domain Research, Technical Research  |
+| 📋 **Phase 1: Planning**       | ✅ Complete | PRD (100 FRs + 90 NFRs), Architecture, Domain Brief |
+| 🎨 **Phase 2: UX Design**      | ⏳ Next     | User flows, wireframes, high-fidelity mockups       |
+| 🏗️ **Phase 3: Epic Breakdown** | ⏳ Planned  | Epics and stories from PRD requirements             |
+| 💻 **Phase 4: Implementation** | ⏳ Planned  | Sprint-based development with AI assistance         |
+| 🧪 **Phase 5: Beta Testing**   | ⏳ Planned  | Design partner pilot (5+ Shuls)                     |
 
 </div>
 
@@ -210,6 +408,7 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 **Two Distinct Administrative UIs:**
 
 #### 1️⃣ Zmanim Provider Builder (Rabbinic Authority Interface)
+
 - [ ] Zmanim & Calendar Calculation DSL
 - [ ] Daily time calculations (Alot, Netz, Shkiah, Tzait, all halachic times)
 - [ ] Hebrew calendar & date calculations (holidays, fast days, special occasions)
@@ -219,6 +418,7 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 - [ ] Validation against reference libraries (KosherJava, Hebcal)
 
 #### 2️⃣ Shul Admin UI (Synagogue Schedule Management)
+
 - [ ] Tree-based minyan configuration (Type → Instance → Rules)
 - [ ] Minyan Scheduling DSL with Downshift formula input + autocomplete
 - [ ] Hierarchical primitive system (Global → Regional → Local)
@@ -228,6 +428,7 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 - [ ] Audit trail for all changes
 
 #### 3️⃣ Core Features
+
 - [ ] Shiur & event listings
 - [ ] User subscriptions & alerts (push/SMS/email)
 - [ ] Automation hooks (MCP/Zapier integrations)
@@ -235,6 +436,7 @@ Shtetl uses a **three-service microservices architecture** designed for multi-te
 - [ ] Multi-Shul following for congregants
 
 ### 🚀 Post-MVP Vision (Phase 5+)
+
 - [ ] Comprehensive Shul portal (membership, aliyos, yahrzeits)
 - [ ] Full-featured mobile app with offline capabilities
 - [ ] Public APIs & event hooks (webhook system)
@@ -277,13 +479,14 @@ We welcome contributions from developers, designers, and community members!
 
 **💻 Development**
 
-- Frontend (React/React Native)
+- Frontend (Next.js/React Native)
 - Backend (Golang)
 - Mobile development
 - Business Analysis
 - QA
 
 &nbsp;
+
 </td>
 <td>
 
@@ -325,18 +528,19 @@ Join our growing community of contributors and users!
 
 <div align="center">
 
-| Metric | MVP Target (6 months) | Current |
-|--------|----------------------|---------|
-| 🏛️ **Active Shuls** | 5+ maintaining schedules | 0 |
-| 👥 **Congregant Subscribers** | 70%+ of active kehilla members | 0 |
-| 📊 **Rabbinic Authorities** | 1+ publishing calendar streams | 0 |
-| 🤖 **Automation Hooks** | 1+ per participating Shul | 0 |
-| ⚡ **Schedule Lookup Time** | 80%+ under 30 seconds | - |
-| 🎯 **Halachic Accuracy** | Zero breaches | - |
+| Metric                        | MVP Target (6 months)          | Current |
+| ----------------------------- | ------------------------------ | ------- |
+| 🏛️ **Active Shuls**           | 5+ maintaining schedules       | 0       |
+| 👥 **Congregant Subscribers** | 70%+ of active kehilla members | 0       |
+| 📊 **Rabbinic Authorities**   | 1+ publishing calendar streams | 0       |
+| 🤖 **Automation Hooks**       | 1+ per participating Shul      | 0       |
+| ⚡ **Schedule Lookup Time**   | 80%+ under 30 seconds          | -       |
+| 🎯 **Halachic Accuracy**      | Zero breaches                  | -       |
 
 </div>
 
 **Quality Goals:**
+
 - 60%+ of users no longer need to call gabbaim for schedule information
 - 60%+ reduction in time gaboim spend on manual notifications
 - 99.5% API uptime (excluding planned maintenance)
@@ -365,8 +569,9 @@ Join our growing community of contributors and users!
 
 **Frontend**
 
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
@@ -400,9 +605,10 @@ Join our growing community of contributors and users!
 ### Stack Rationale
 
 - **Go Backend:** High performance, excellent concurrency, strong typing, mature ecosystem
-- **PostgreSQL 17:** JSONB for tree structures, ACID guarantees, Row-Level Security for multi-tenancy
-- **Redis 7.4:** Caching layer for schedule queries, calendar streams, primitives
-- **React + TypeScript:** Type-safe frontend development with modern tooling
+- **PostgreSQL 18:** JSONB for tree structures, ACID guarantees, Row-Level Security for multi-tenancy
+- **Redis 8.4:** Caching layer for schedule queries, calendar streams, primitives
+- **Next.js + TypeScript:** Type-safe frontend development with server-side rendering, file-based routing, and modern tooling
+- **React Native + Expo:** Cross-platform mobile development with Expo Router for file-based navigation, EAS for streamlined app store deployment
 - **Downshift:** Lightweight headless autocomplete library (~14KB) for formula input with context-aware suggestions
 - **Clerk:** Modern auth provider with JWT, organizations, user metadata
 - **gRPC:** Efficient service-to-service communication with strong typing
