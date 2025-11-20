@@ -38,18 +38,19 @@ story_location: docs/sprint-artifacts
 development_status:
   # Epic 1: Development Environment & Project Foundation
   epic-1: backlog
-  1-1-multi-repository-structure-setup: ready-for-dev
-  1-2-coder-workspace-template: backlog
-  1-3-api-contract-design-all-3-services: backlog
-  1-4-domain-sample-data-fixtures: backlog
-  1-5-mock-api-servers-realistic-responses: backlog
-  1-6-shared-primitive-system-architecture: backlog
-  1-7-formula-input-component-with-autocomplete: backlog
-  1-8-database-schema-design-multi-tenant: backlog
-  1-9-authentication-with-clerk: backlog
-  1-10-full-ci-cd-pipeline: backlog
-  1-11-monitoring-observability: backlog
-  1-12-testing-framework-setup: backlog
+  1-1-multi-repository-structure-setup: done
+  1-2-coder-workspace-template: done
+  1-3-full-ci-cd-pipeline: ready-for-dev
+  1-4-integration-testing-framework: ready-for-dev
+  1-5-monitoring-observability: ready-for-dev
+  1-6-api-contract-design-all-3-services: backlog
+  1-7-domain-sample-data-fixtures: backlog
+  1-8-mock-api-servers-realistic-responses: backlog
+  1-9-shared-primitive-system-architecture: backlog
+  1-10-formula-input-component-with-autocomplete: backlog
+  1-11-database-schema-design-multi-tenant: backlog
+  1-12-authentication-with-clerk: backlog
+  1-13-testing-framework-setup: backlog
   epic-1-retrospective: optional
 
   # Epic 2: Zmanim Provider (Rabbinic Authority Interface)

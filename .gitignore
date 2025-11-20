@@ -163,3 +163,6 @@ coverage/
 
 # Project specific
 # Add any project-specific patterns here
+
+# Serena AI coding assistant
+.serena/

@@ -19,10 +19,10 @@ so that **I can start contributing to the appropriate service immediately**.
    - `.gitignore` for Go projects
 
 2. **Web Frontend Repository (`shtetl-web/`) initialized**
-   - Vite + React 19 + TypeScript initialized via `npm create vite@latest`
+   - Next.js + TypeScript initialized via `npx create-next-app@latest`
    - `package.json` with correct dependencies
    - `tsconfig.json` with strict TypeScript configuration
-   - Basic folder structure: `src/features/`, `src/shared/`, `src/App.tsx`, `src/main.tsx`
+   - Basic folder structure: `src/features/`, `src/shared/`, `app/layout.tsx`, `app/page.tsx`
    - README.md with setup instructions
    - `.gitignore` for Node.js projects
 
@@ -57,7 +57,7 @@ so that **I can start contributing to the appropriate service immediately**.
 
 - [ ] **Task 2: Initialize shtetl-web frontend repository** (AC: 2)
   - [ ] 2.1 Create GitHub repository `shtetl-web`
-  - [ ] 2.2 Initialize Vite + React 19 + TypeScript project
+  - [ ] 2.2 Initialize Next.js + TypeScript project
   - [ ] 2.3 Configure strict TypeScript in `tsconfig.json`
   - [ ] 2.4 Create folder structure: `src/features/`, `src/shared/`
   - [ ] 2.5 Verify initial build succeeds: `npm run build`
@@ -95,8 +95,7 @@ so that **I can start contributing to the appropriate service immediately**.
 ### Technical Specifications
 
 - **Go version**: 1.25.4
-- **React version**: 19.2
-- **Vite version**: 7.2
+- **Next.js version**: 16
 - **Expo SDK**: 54
 - **React Native**: 0.81
 

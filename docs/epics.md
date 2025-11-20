@@ -237,7 +237,7 @@ This map shows which epic addresses which functional requirements:
 **When** repositories are created
 **Then** the following structure exists:
 - `shtetl-api/` with 3 service directories (zmanim, shul, kehilla)
-- `shtetl-web/` with Vite + React 19 + TypeScript initialized
+- `shtetl-web/` with Next.js + TypeScript initialized
 - `shtetl-mobile/` with Expo + React Native + TypeScript initialized
 
 **And** each Go service has:
@@ -274,10 +274,10 @@ This map shows which epic addresses which functional requirements:
 **When** developer runs `coder create shtetl-dev --template shtetl`
 **Then** workspace is created with:
 - PostgreSQL 18 running on port 5432
-- Redis 7.4 running on port 6379
+- Redis 8.4 running on port 6379
 - Go 1.25.4 installed
 - Node.js 24.x LTS installed
-- All 3 repos cloned automatically
+- All 4 submodule repos cloned automatically (shtetl-infra, shtetl-api, shtetl-web, shtetl-mobile)
 
 **And** startup script completes:
 - `go mod download` for all Go services
@@ -286,10 +286,10 @@ This map shows which epic addresses which functional requirements:
 - All services start successfully
 
 **And** developer can verify:
-- Visit http://localhost:8001/health → Zmanim service "ok"
-- Visit http://localhost:8002/health → Shul service "ok"
-- Visit http://localhost:8003/health → Kehilla service "ok"
-- Visit http://localhost:3000 → Web app loads
+- Visit http://localhost:8101/health → Zmanim service "ok"
+- Visit http://localhost:8103/health → Shul service "ok"
+- Visit http://localhost:8105/health → Kehilla service "ok"
+- Visit http://localhost:8100 → Web app loads
 - Connect to PostgreSQL → database exists
 
 **And** tested on:
@@ -302,13 +302,214 @@ This map shows which epic addresses which functional requirements:
 **Technical Notes:**
 - Create `.coder/shtetl-workspace.tf` template
 - Startup script: `.coder/startup.sh`
-- Use Docker images: postgres:18-alpine, redis:7.4-alpine
+- Use Docker images: postgres:18-alpine, redis:8.4-alpine
 - Environment variables in workspace template
 - Record 2-minute demo video showing `coder create` → working environment
 
 ---
 
-### Story 1.3: API Contract Design (All 3 Services)
+### Story 1.3: CI/CD Pipeline with Lambda Deployment (Dev Only)
+
+**As a** developer merging code,
+**I want** automated build, test, and deployment to dev environment,
+**So that** changes are validated and deployed without manual steps.
+
+**Acceptance Criteria:**
+
+**Given** code is pushed to GitHub `dev` branch
+**When** CI/CD pipeline runs
+**Then** GitHub Actions workflow includes:
+
+**Build Stage:**
+- Checkout code
+- Install Go 1.25.4
+- Install Node.js 24.x LTS
+- `go build` for all 3 services (REST-only)
+- `npm run build` for web (Next.js 16)
+- Build Lambda deployment packages (zip with Go binary)
+- Artifacts uploaded
+
+**Test Stage:**
+- `go test ./...` for all services
+- `npm run test` for web (Vitest)
+- Linting: `golangci-lint`, `eslint`, `tsc --noEmit`
+- Coverage reports generated
+- Tests must pass before deployment
+
+**Deploy to Dev Stage:**
+- Authenticate to AWS using OIDC (no long-lived credentials)
+- CDKTF `cdktf synth` (generate Terraform JSON)
+- CDKTF `cdktf deploy --auto-approve` (dev stack only)
+- Deploy to AWS Lambda (all 3 services as separate functions)
+- Deploy web to S3 + CloudFront
+- Run smoke tests against dev endpoints
+
+**And** CDKTF infrastructure includes:
+- **GitHub Repository Configuration:**
+  - Branch protection rules (main, dev - require PR reviews)
+  - GitHub OIDC provider setup in AWS
+  - GitHub Actions IAM role with deployment permissions
+- **AWS Lambda Functions:**
+  - `shtetl-dev-zmanim` (REST API on port 8101)
+  - `shtetl-dev-shul` (REST API on port 8103)
+  - `shtetl-dev-kehilla` (REST API on port 8105)
+- **API Gateway HTTP API** (REST endpoints, no gRPC)
+- **RDS PostgreSQL 18** (db.t4g.micro for cost control)
+- **ElastiCache Redis 8.4** (cache.t4g.micro for cost control)
+- **Private VPC** with NAT Gateway for Lambda → RDS/Redis access
+- **CloudWatch Logs + Alarms** (basic monitoring)
+- **S3 bucket + CloudFront** for web hosting
+
+**And** Lambda-compatible service structure:
+- Services refactored to support both deployment modes:
+  - `cmd/lambda/main.go` - AWS Lambda handler (uses aws-lambda-go-api-proxy)
+  - `cmd/server/main.go` - HTTP server (for Coder local dev)
+  - Shared business logic in `internal/` (no duplication)
+
+**And** pipeline triggers:
+- On push to `dev` → deploy to dev environment
+- On push to `main` → build + test only (no deploy yet - staging/prod deferred)
+- On pull request → build + test only (no deploy)
+
+**And** GitHub OIDC authentication:
+- No AWS access keys stored in GitHub Secrets
+- GitHub Actions assumes IAM role via OIDC federation
+- Role scoped to minimal permissions (Lambda deploy, S3 write, CDKTF state)
+
+**Prerequisites:** Story 1.1 (repos), Story 1.2 (Coder workspace), Story 1.6 (REST API contracts)
+
+**Technical Notes:**
+- GitHub Actions workflow: `.github/workflows/ci-cd.yml`
+- CDKTF in TypeScript: `infrastructure/` directory (vendor-neutral IaC)
+- Use CDKTF v0.20+ with AWS provider
+- GitHub Terraform provider for repo configuration
+- Lambda deployment: Go 1.x runtime with custom runtime (Go 1.25.4)
+- Use `github.com/awslabs/aws-lambda-go-api-proxy` to wrap HTTP handlers
+- Dev URL: https://api-dev.shtetl.com
+- Future: Story 1.14 will add staging/production environments
+- Cost optimization: Dev environment ~$50/month (RDS + ElastiCache + NAT Gateway)
+
+---
+
+### Story 1.4: Integration Testing Framework
+
+**As a** developer,
+**I want** early-stage integration testing infrastructure with test APIs,
+**So that** we can validate deployments and contracts from day one.
+
+**Acceptance Criteria:**
+
+**Given** basic services and CI/CD exist
+**When** integration test framework is implemented
+**Then** test infrastructure includes:
+
+**Test Harness:**
+- `tests/integration/` directory in shtetl-api repo
+- Go test framework with `testing` package
+- HTTP client helpers for testing APIs
+- Test environment configuration (test DB, test Redis)
+
+**And** health check tests for all services:
+```go
+func TestZmanimServiceHealth(t *testing.T) {
+    resp := httpGet(t, "http://localhost:8101/health")
+    assert.Equal(t, 200, resp.StatusCode)
+    assert.Contains(t, resp.Body, "healthy")
+}
+```
+
+**And** smoke tests run in CI/CD:
+- After deployment to dev environment
+- Tests verify: Health endpoints return 200
+- Tests verify: Services can connect to database
+- Tests verify: Services can connect to Redis
+- Failed smoke tests block deployment
+
+**And** contract validation setup:
+- OpenAPI validator library installed (go-swagger or kin-openapi)
+- REST endpoint contract tests (response matches OpenAPI schema)
+- Basic contract tests (response matches schema)
+
+**And** test data helpers:
+- Helper functions to create test shuls
+- Helper functions to seed test database
+- Cleanup functions (teardown after tests)
+
+**And** test execution:
+- `make test-integration` runs all integration tests locally
+- Tests run against local Coder workspace services
+- CI runs integration tests on every commit
+- Clear test output with readable failure messages
+
+**Prerequisites:** Story 1.2 (Coder workspace), Story 1.3 (CI/CD)
+
+**Technical Notes:**
+- Use `github.com/stretchr/testify` for assertions
+- Use `httptest` package for mocking HTTP
+- Docker testcontainers for isolated test DB (optional, can use Coder DB)
+- Keep tests fast (<30 seconds total)
+- Reference: NFR-MAINT-1 (testing requirements)
+
+---
+
+### Story 1.5: Monitoring & Observability
+
+**As a** developer debugging production issues,
+**I want** structured logging and health monitoring,
+**So that** I can quickly identify and fix problems.
+
+**Acceptance Criteria:**
+
+**Given** services are deployed
+**When** monitoring is configured
+**Then** all Go services:
+- Use zerolog for structured JSON logging
+- Log level: DEBUG (local), INFO (staging), WARN (production)
+- Every log includes: service, timestamp, level, request_id, shul_id, user_id
+- HTTP requests logged with: method, path, status, duration
+
+**And** health check endpoints:
+- `GET /health` returns 200 OK with:
+  ```json
+  {
+    "status": "healthy",
+    "service": "zmanim",
+    "version": "0.1.0",
+    "database": "connected",
+    "redis": "connected"
+  }
+  ```
+- Returns 503 if database or Redis unavailable
+
+**And** CloudWatch integration:
+- All logs stream to CloudWatch Logs
+- Log groups: /aws/lambda/shtetl-zmanim, /aws/lambda/shtetl-shul, /aws/lambda/shtetl-kehilla
+- Retention: 30 days
+
+**And** CloudWatch Alarms:
+- Lambda errors > 10/minute → alert
+- API Gateway 5xx responses > 5% → alert
+- RDS CPU > 80% → alert
+- Lambda duration > 10s → alert
+
+**And** metrics dashboard:
+- Request count per service
+- Error rate percentage
+- P50, P95, P99 latency
+- Database connection pool usage
+
+**Prerequisites:** Story 1.3 (CI/CD deployed to AWS)
+
+**Technical Notes:**
+- Install `github.com/rs/zerolog`
+- Middleware: Generate request_id (UUID) for distributed tracing
+- CloudWatch dashboard: `infrastructure/dashboards/main.json`
+- Alarm notifications: SNS topic → email (platform admin)
+- Future: Add distributed tracing (OpenTelemetry)
+
+---
+
+### Story 1.6: API Contract Design (All 3 Services)
 
 **As a** frontend or backend developer,
 **I want** complete API specifications before implementation starts,
@@ -319,10 +520,11 @@ This map shows which epic addresses which functional requirements:
 **Given** service architecture is defined
 **When** API contracts are designed
 **Then** Zmanim Service has:
-- `api/zmanim/v1/zmanim.proto` (gRPC)
-- Services defined: GetCalendarStream, CalculateZmanim, PublishStream
-- Message types: CalendarStream, ZmanimRequest, ZmanimResponse
-- Comments documenting each field and service
+- `api/zmanim/v1/openapi.yaml` (REST)
+- Endpoints: /api/v1/zmanim/calculate, /api/v1/zmanim/streams, /api/v1/zmanim/streams/{id}
+- Request/response schemas for all endpoints
+- Comments documenting each field and endpoint
+- Error response formats defined
 
 **And** Shul Service has:
 - `api/shul/v1/openapi.yaml` (REST)
@@ -337,10 +539,10 @@ This map shows which epic addresses which functional requirements:
 - Query parameters documented
 
 **And** contracts are approved by:
-- Epic 2 team (reviews Zmanim gRPC)
-- Epic 3 team (reviews Shul REST)
-- Epic 4 team (reviews Kehilla REST for web)
-- Epic 5 team (reviews Kehilla REST for mobile)
+- Epic 2 team (reviews Zmanim REST API)
+- Epic 3 team (reviews Shul REST API)
+- Epic 4 team (reviews Kehilla REST API for web)
+- Epic 5 team (reviews Kehilla REST API for mobile)
 
 **And** documentation includes:
 - Authentication requirements (JWT in header)
@@ -351,15 +553,15 @@ This map shows which epic addresses which functional requirements:
 **Prerequisites:** Story 1.1
 
 **Technical Notes:**
-- Use OpenAPI 3.1 spec
-- Use protobuf3 for gRPC
+- Use OpenAPI 3.1 spec for all services
 - Generate TypeScript types from OpenAPI (openapi-typescript)
-- Generate Go types from proto (protoc-gen-go)
+- Generate Go server stubs from OpenAPI (oapi-codegen)
 - Store specs in dedicated `api/` directory in each service
+- REST-first approach enables Lambda deployment without gRPC complexity
 
 ---
 
-### Story 1.4: Domain Sample Data Fixtures
+### Story 1.7: Domain Sample Data Fixtures
 
 **As a** developer building UI or testing APIs,
 **I want** realistic sample data based on actual Shul schedules,
@@ -395,7 +597,7 @@ This map shows which epic addresses which functional requirements:
 - City (Manchester): LocalEvents
 - Shul (Beis Mordechai): ShulAnniversary, RabbiYahrtzeit
 
-**Prerequisites:** Story 1.3 (needs data model from contracts)
+**Prerequisites:** Story 1.6 (needs data model from contracts)
 
 **Technical Notes:**
 - Store in `fixtures/` directory
@@ -406,7 +608,7 @@ This map shows which epic addresses which functional requirements:
 
 ---
 
-### Story 1.5: Mock API Servers (Realistic Responses)
+### Story 1.8: Mock API Servers (Realistic Responses)
 
 **As a** frontend developer,
 **I want** mock API servers returning realistic data,
@@ -417,20 +619,20 @@ This map shows which epic addresses which functional requirements:
 **Given** API contracts and sample data exist
 **When** mock servers are implemented
 **Then** Zmanim Service mock:
-- Listens on port 8001 (gRPC)
-- `GetCalendarStream()` returns Rabbi Cohen Manchester stream
-- `CalculateZmanim(date, location)` returns zmanim from fixtures
-- Responses match proto definitions exactly
+- Listens on port 8101 (REST)
+- `GET /api/v1/zmanim/streams/{id}` returns Rabbi Cohen Manchester stream
+- `POST /api/v1/zmanim/calculate` returns zmanim from fixtures (accepts date, location)
+- Responses match OpenAPI schema exactly
 
 **And** Shul Service mock:
-- Listens on port 8002 (REST)
+- Listens on port 8103 (REST)
 - `GET /api/v1/shuls/beis-mordechai` returns sample shul
 - `GET /api/v1/shuls/beis-mordechai/minyanim` returns minyan tree
 - `POST /api/v1/minyanim/{id}/validate-coverage` returns 100% coverage
 - Responses match OpenAPI schemas
 
 **And** Kehilla Service mock:
-- Listens on port 8003 (REST)
+- Listens on port 8105 (REST)
 - `GET /api/v1/schedules/{shulId}/today` returns today's schedule
 - `GET /api/v1/schedules/{shulId}/week` returns weekly schedule
 - Data includes Hebrew dates (1 Kislev 5786, etc.)
@@ -442,18 +644,18 @@ This map shows which epic addresses which functional requirements:
 - Hebrew calendar dates are accurate
 - Multi-tenant: Accepts any shul_id, returns fixture with that ID
 
-**Prerequisites:** Story 1.4 (sample data), Story 1.3 (contracts)
+**Prerequisites:** Story 1.7 (sample data), Story 1.6 (contracts)
 
 **Technical Notes:**
 - Implement in Go using same framework as real services
 - Load fixtures from JSON files
 - Add delay simulation (50ms) for realistic latency
-- Include OpenAPI UI (Swagger) for manual testing at :8002/docs, :8003/docs
+- Include OpenAPI UI (Swagger) for manual testing at :8103/docs, :8105/docs
 - Mock servers run in Coder workspace automatically
 
 ---
 
-### Story 1.6: Shared Primitive System Architecture
+### Story 1.9: Shared Primitive System Architecture
 
 **As a** developer working on Epic 2 or Epic 3,
 **I want** a clear design for the primitive system,
@@ -495,7 +697,7 @@ CREATE TABLE primitive_inheritance (
 
 **And** API ownership:
 - Shul Service: Owns CRUD operations for primitives table
-- Zmanim Service: Reads primitives via gRPC call to Shul Service
+- Zmanim Service: Reads primitives via REST API call to Shul Service
 - Epic 3 team: Implements primitive CRUD endpoints
 - Epic 2 team: Consumes primitive data
 
@@ -505,7 +707,7 @@ CREATE TABLE primitive_inheritance (
 - Ownership matrix (who can modify what)
 - Migration script creating tables
 
-**Prerequisites:** Story 1.3 (service boundaries defined)
+**Prerequisites:** Story 1.6 (service boundaries defined)
 
 **Technical Notes:**
 - Store design in `docs/architecture/primitives.md`
@@ -515,7 +717,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.7: Formula Input Component with Autocomplete
+### Story 1.10: Formula Input Component with Autocomplete
 
 **As a** developer implementing Epic 2 or Epic 3,
 **I want** a reusable formula input component with autocomplete,
@@ -560,7 +762,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.8: Database Schema Design (Multi-Tenant)
+### Story 1.11: Database Schema Design (Multi-Tenant)
 
 **As a** developer implementing data models,
 **I want** complete database schema with multi-tenancy patterns,
@@ -607,7 +809,7 @@ CREATE TABLE primitive_inheritance (
 - Migration scripts (numbered: 001_initial_schema.sql)
 - GORM model files in each service
 
-**Prerequisites:** Story 1.6 (primitive schema), Story 1.3 (data models from API)
+**Prerequisites:** Story 1.9 (primitive schema), Story 1.6 (data models from API)
 
 **Technical Notes:**
 - Use PostgreSQL 18 features (JSONB, POINT type, improved I/O subsystem)
@@ -618,7 +820,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.9: Authentication with Clerk
+### Story 1.12: Authentication with Clerk
 
 **As a** developer implementing protected endpoints,
 **I want** Clerk authentication integrated in all services,
@@ -635,7 +837,7 @@ CREATE TABLE primitive_inheritance (
 - Request context includes: UserID, ShulID, Role
 
 **And** authentication flow works:
-- Frontend: Clerk React component loads
+- Frontend: Clerk Next.js component loads
 - User signs in: Google or email/password
 - JWT token included in API requests (Authorization header)
 - Backend: Validates token, extracts claims
@@ -661,11 +863,11 @@ CREATE TABLE primitive_inheritance (
 - gabbai@beismordechai.com (shul_admin, shul_id=beis-mordechai)
 - user@beismordechai.com (kehilla, shul_id=beis-mordechai)
 
-**Prerequisites:** Story 1.1 (services exist), Story 1.8 (user data model)
+**Prerequisites:** Story 1.1 (services exist), Story 1.11 (user data model)
 
 **Technical Notes:**
 - Install `github.com/clerk/clerk-sdk-go/v2`
-- Install `@clerk/clerk-react` in web
+- Install `@clerk/nextjs` in web
 - Install `@clerk/clerk-expo` in mobile
 - Middleware: Verify JWT on every request except /health
 - Store Clerk keys in environment variables
@@ -673,132 +875,7 @@ CREATE TABLE primitive_inheritance (
 
 ---
 
-### Story 1.10: Full CI/CD Pipeline
-
-**As a** developer merging code,
-**I want** automated build, test, and deployment to staging,
-**So that** changes are validated and deployed without manual steps.
-
-**Acceptance Criteria:**
-
-**Given** code is pushed to GitHub
-**When** CI/CD pipeline runs
-**Then** GitHub Actions workflow includes:
-
-**Build Stage:**
-- Checkout code
-- Install Go 1.25.4
-- Install Node.js 24.x LTS
-- `go build` for all 3 services
-- `npm run build` for web (Vite 7.2)
-- `npx expo export` for mobile (Expo SDK 54)
-- Artifacts uploaded
-
-**Test Stage:**
-- `go test ./...` for all services
-- `npm run test` for web (Vitest)
-- Linting: `golangci-lint`, `eslint`, `tsc --noEmit`
-- Coverage reports generated
-- Tests must pass 100%
-
-**Deploy to Staging Stage:**
-- AWS CDK `cdk synth`
-- AWS CDK `cdk deploy --require-approval never` (staging stack)
-- Deploy to AWS Lambda (all 3 services)
-- Deploy web to S3 + CloudFront
-- Run smoke tests against staging endpoints
-
-**Deploy to Production Stage:**
-- Manual approval required
-- AWS CDK deploy (production stack)
-- Blue/green deployment
-- Rollback capability
-
-**And** AWS CDK infrastructure includes:
-- Lambda functions for each service
-- API Gateway (REST + HTTP for gRPC over HTTP/2)
-- RDS PostgreSQL instance
-- ElastiCache Redis
-- CloudWatch Logs + Alarms
-- S3 bucket + CloudFront for web hosting
-
-**And** pipeline triggers:
-- On push to `dev` → deploy to dev environment
-- On push to `main` → deploy to staging
-- On git tag `v*` → deploy to production (with approval)
-- On pull request → build + test only (no deploy)
-
-**Prerequisites:** Story 1.1 (repos), Story 1.8 (database), Story 1.9 (auth)
-
-**Technical Notes:**
-- GitHub Actions workflow: `.github/workflows/ci-cd.yml`
-- AWS CDK in TypeScript: `infrastructure/` directory
-- Use AWS CDK v2
-- Secrets: Clerk keys, AWS credentials in GitHub Secrets
-- Dev URL: api-dev.shtetl.com
-- Staging URL: api-staging.shtetl.com
-- Production URL: api.shtetl.com
-
----
-
-### Story 1.11: Monitoring & Observability
-
-**As a** developer debugging production issues,
-**I want** structured logging and health monitoring,
-**So that** I can quickly identify and fix problems.
-
-**Acceptance Criteria:**
-
-**Given** services are deployed
-**When** monitoring is configured
-**Then** all Go services:
-- Use zerolog for structured JSON logging
-- Log level: DEBUG (local), INFO (staging), WARN (production)
-- Every log includes: service, timestamp, level, request_id, shul_id, user_id
-- HTTP requests logged with: method, path, status, duration
-
-**And** health check endpoints:
-- `GET /health` returns 200 OK with:
-  ```json
-  {
-    "status": "healthy",
-    "service": "zmanim",
-    "version": "0.1.0",
-    "database": "connected",
-    "redis": "connected"
-  }
-  ```
-- Returns 503 if database or Redis unavailable
-
-**And** CloudWatch integration:
-- All logs stream to CloudWatch Logs
-- Log groups: /aws/lambda/shtetl-zmanim, /aws/lambda/shtetl-shul, /aws/lambda/shtetl-kehilla
-- Retention: 30 days
-
-**And** CloudWatch Alarms:
-- Lambda errors > 10/minute → alert
-- API Gateway 5xx responses > 5% → alert
-- RDS CPU > 80% → alert
-- Lambda duration > 10s → alert
-
-**And** metrics dashboard:
-- Request count per service
-- Error rate percentage
-- P50, P95, P99 latency
-- Database connection pool usage
-
-**Prerequisites:** Story 1.10 (deployed to AWS)
-
-**Technical Notes:**
-- Install `github.com/rs/zerolog`
-- Middleware: Generate request_id (UUID) for distributed tracing
-- CloudWatch dashboard: `infrastructure/dashboards/main.json`
-- Alarm notifications: SNS topic → email (platform admin)
-- Future: Add distributed tracing (OpenTelemetry)
-
----
-
-### Story 1.12: Testing Framework Setup
+### Story 1.13: Testing Framework Setup
 
 **As a** developer writing tests,
 **I want** complete testing infrastructure,
@@ -849,7 +926,7 @@ services/zmanim/
 - Integration test: Database test with test containers
 - Mock test: Service with mocked repository
 
-**Prerequisites:** Story 1.1 (code structure), Story 1.8 (database)
+**Prerequisites:** Story 1.1 (code structure), Story 1.11 (database)
 
 **Technical Notes:**
 - Use `testing.T` and `testing.M` for Go
@@ -862,15 +939,15 @@ services/zmanim/
 
 ## Epic 1 Summary
 
-**Total Stories:** 12
+**Total Stories:** 13
 **Dependencies:** Linear flow (most stories build on previous)
 **Estimated Duration:** Foundation for all work (2-3 weeks)
 **Teams Unblocked:** All parallel epics can start after Epic 1 completes
 
 **Critical Path:**
-- Story 1.3 (API contracts) blocks all frontend work
-- Story 1.5 (mocks) unblocks Epic 4 & 5 immediately
-- Story 1.10 (CI/CD) enables continuous delivery for all teams
+- Story 1.3 (CI/CD) enables continuous delivery for all teams
+- Story 1.6 (API contracts) blocks all frontend work
+- Story 1.8 (mocks) unblocks Epic 4 & 5 immediately
 
 **Key Deliverables:**
 - ✅ Developer can contribute in 30 minutes (`coder create`)
@@ -899,10 +976,9 @@ services/zmanim/
 **Technology Stack (Latest Stable Versions):**
 - Go 1.25.4
 - Node.js 24.x LTS
-- React 19.2
+- Next.js 16
 - PostgreSQL 18
-- Redis 7.4
-- Vite 7.2
+- Redis 8.4
 - Expo SDK 54
 - GORM v2
 

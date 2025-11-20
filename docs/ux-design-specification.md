@@ -16,7 +16,7 @@ _Generated using BMad Method - Create UX Design Workflow v1.0_
 2. **Synagogue Administrators (Gaboim)** - Non-technical users configuring minyan schedules using visual tree-based interfaces
 3. **Congregants (Kehilla Members)** - End users accessing schedules via mobile apps and web with minimal cognitive load
 
-**Platform:** Web application (React + Downshift) for admin interfaces, mobile app (React Native + Expo) for congregants, responsive mobile web fallback.
+**Platform:** Web application (Next.js + Downshift) for admin interfaces, mobile app (React Native + Expo) for congregants, responsive mobile web fallback.
 
 **Key Innovation:** Dual DSL system with hierarchical primitive cascade and real-time coverage validation preventing incomplete schedules.
 

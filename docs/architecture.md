@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Shtetl's architecture implements a multi-tenant SaaS platform with three independent microservices, supporting dual domain-specific languages (DSLs) for zmanim calculation and minyan scheduling. The system uses a multi-repository approach with Go backends, React/TypeScript web frontends, and React Native mobile apps, all designed for portability and vendor-neutrality while maintaining strict halachic accuracy requirements.
+Shtetl's architecture implements a multi-tenant SaaS platform with three independent microservices, supporting dual domain-specific languages (DSLs) for zmanim calculation and minyan scheduling. The system uses a multi-repository approach with Go backends, Next.js/TypeScript web frontends, and React Native mobile apps, all designed for portability and vendor-neutrality while maintaining strict halachic accuracy requirements.
 
 ## Project Initialization
 
@@ -69,7 +69,7 @@ coder create shtetl-dev --template shtetl
 # Inside workspace, repositories are auto-cloned and configured
 # The startup script handles:
 # - Go module initialization
-# - Vite + React + TypeScript setup
+# - Next.js + TypeScript setup
 # - Expo + TypeScript setup
 # - npm/go dependency installation
 # - PostgreSQL + Redis startup
@@ -87,12 +87,11 @@ go mod init github.com/yourusername/shtetl-api
 
 **Web Frontend Repository: `shtetl-web`**
 ```bash
-# Initialize with Vite + React + TypeScript
-npm create vite@latest shtetl-web -- --template react-ts
+# Initialize with Next.js + TypeScript
+npx create-next-app@latest shtetl-web --typescript --tailwind --eslint --app --src-dir
 cd shtetl-web
-npm install
 npm install downshift @floating-ui/react
-npm install @clerk/clerk-react
+npm install @clerk/nextjs
 ```
 
 **Mobile Repository: `shtetl-mobile`**
@@ -110,22 +109,20 @@ npm install @clerk/clerk-expo
 | Category | Decision | Version | Rationale |
 | -------- | -------- | ------- | --------- |
 | Backend Language | Go | 1.25.4 | Strong typing (AI-friendly), excellent performance, great for DSL parsers, explicit error handling |
-| Frontend Framework | React | 19.2 | Component reusability, lightweight autocomplete components, large ecosystem |
-| Build Tool (Web) | Vite | 7.2 | Fast dev server, modern bundling, excellent TypeScript support, ESM-only |
+| Frontend Framework | Next.js | 16 | Full-stack React framework with server-side rendering, file-based routing, API routes, and excellent TypeScript support |
 | Mobile Framework | React Native (Expo) | SDK 54 | Cross-platform, rapid development, easier deployment via EAS, React Native 0.81 |
 | Primary Database | PostgreSQL | 18 | Relational integrity, JSONB for flexibility, improved I/O subsystem, excellent for multi-tenancy |
-| Caching Layer | Redis | 7.4 | Session storage, schedule caching, rate limiting |
+| Caching Layer | Redis | 8.4 | Session storage, schedule caching, rate limiting |
 | ORM | GORM | v2 (latest) | Productivity for common queries, raw SQL for complex operations |
-| Authentication | Clerk | latest | Organization management for Shuls, pre-built React components, strong Go SDK |
+| Authentication | Clerk | latest | Organization management for Shuls, pre-built Next.js/React components, strong Go SDK |
 | Logging | zerolog | latest | Structured JSON logging, excellent performance, simple API |
-| API Pattern (External) | REST | - | Simple, widely understood, works everywhere (mobile, web, automation) |
-| API Pattern (Internal) | gRPC | - | High performance service-to-service communication, type safety |
+| API Pattern (All Services) | REST | - | Simple, widely understood, Lambda-compatible, works everywhere (mobile, web, automation, internal) |
 | DSL Parser | Go PEG (TBD) | - | participle or pigeon library for custom DSL parsing |
 | PDF Generation | React-PDF | latest | Hebrew RTL support, React component-based |
 | Formula Input | Downshift | latest | Lightweight autocomplete (~14KB), headless/customizable, excellent a11y |
 | Dev Environment | Coder (local) | latest | Standardized workspaces, zero config drift, AI-optimized |
-| Infrastructure as Code | AWS CDK | latest | TypeScript, type safety, AWS-native, better than Terraform for AWS-only |
-| CI/CD | GitHub Actions | - | Free for open source, integrated with GitHub, easy CDK deployment |
+| Infrastructure as Code | CDKTF | 0.20+ | Terraform + TypeScript, vendor-neutral, supports AWS + GitHub provider |
+| CI/CD | GitHub Actions | - | Free for open source, integrated with GitHub, OIDC authentication |
 
 ## Technology Stack Details
 
@@ -133,20 +130,20 @@ npm install @clerk/clerk-expo
 
 **Backend Services (Go 1.25.4):**
 - **Framework:** Standard library + gorilla/mux or fiber for REST
-- **gRPC:** google.golang.org/grpc
+- **Lambda:** github.com/awslabs/aws-lambda-go-api-proxy (wraps HTTP handlers for Lambda)
 - **Database:** GORM v2 with PostgreSQL driver (uses pgx v5)
 - **Cache:** go-redis/redis
 - **Auth:** github.com/clerk/clerk-sdk-go/v2
 - **Logging:** github.com/rs/zerolog
 - **Testing:** Standard testing package + testify
 
-**Web Frontend (React 19.2 + TypeScript):**
-- **Build Tool:** Vite
+**Web Frontend (Next.js 16 + TypeScript):**
+- **Framework:** Next.js with App Router
 - **Formula Input:** downshift (useCombobox hook for single-line formula autocomplete)
-- **Auth:** @clerk/clerk-react
-- **HTTP Client:** fetch API or axios
+- **Auth:** @clerk/nextjs
+- **HTTP Client:** fetch API (with Next.js server actions where appropriate)
 - **State Management:** React Context + hooks (expand to Zustand if needed)
-- **Styling:** TailwindCSS (to be added)
+- **Styling:** TailwindCSS
 - **PDF Preview:** react-pdf for viewing generated PDFs
 
 **Mobile (React Native + Expo):**
@@ -158,7 +155,7 @@ npm install @clerk/clerk-expo
 **Infrastructure:**
 - **Development:** Local Coder (Docker) - $0 cost
 - **Production Database:** PostgreSQL 18 (AWS RDS)
-- **Production Cache:** Redis 7.4 (AWS ElastiCache)
+- **Production Cache:** Redis 8.4 (AWS ElastiCache)
 - **Production Deployment:** AWS Serverless (Lambda + API Gateway)
 - **Containerization:** Docker for local development
 - **IaC:** AWS CDK (TypeScript) for all AWS resource provisioning
@@ -184,14 +181,14 @@ npm install @clerk/clerk-expo
 
 ```
 ┌─────────────────────┐
-│  Zmanim Service     │ Port 8001 (gRPC)
+│  Zmanim Service     │ Port 8101 (REST)
 │  - Calculations     │
 │  - Calendar Streams │
 └──────────┬──────────┘
-           │ gRPC
+           │ REST API
            ↓
 ┌─────────────────────┐
-│  Shul Service       │ Port 8002 (REST + gRPC)
+│  Shul Service       │ Port 8103 (REST)
 │  - Shul Admin       │
 │  - Scheduling       │
 │  - PDF Generation   │
@@ -199,7 +196,7 @@ npm install @clerk/clerk-expo
            │ Reads schedules
            ↓
 ┌─────────────────────┐
-│  Kehilla Service    │ Port 8003 (REST)
+│  Kehilla Service    │ Port 8105 (REST)
 │  - Public API       │
 │  - Subscriptions    │
 │  - Notifications    │
@@ -208,7 +205,7 @@ npm install @clerk/clerk-expo
 
 **Service 1: Zmanim Service**
 - **Purpose:** Zmanim/calendar calculation engine for rabbinic authorities
-- **Technology:** Go + gRPC
+- **Technology:** Go + REST (Lambda-compatible)
 - **Database:** PostgreSQL (calculation formulas, streams, versions)
 - **Key Capabilities:**
   - Zmanim DSL parsing and execution
@@ -216,11 +213,11 @@ npm install @clerk/clerk-expo
   - Hebrew calendar calculations (holidays, fast days, Rosh Chodesh)
   - Calendar stream publishing with version control
   - Audit trails for calculation changes (7-year retention)
-- **Consumers:** Shul Service (via gRPC)
+- **Consumers:** Shul Service (via REST API)
 
 **Service 2: Shul Service**
 - **Purpose:** Shul administration and minyan scheduling
-- **Technology:** Go + REST + gRPC
+- **Technology:** Go + REST (Lambda-compatible)
 - **Database:** PostgreSQL (shuls, minyanim, rules, primitives)
 - **Key Capabilities:**
   - Multi-tenant Shul management
@@ -249,12 +246,13 @@ npm install @clerk/clerk-expo
 ### Integration Points
 
 **Zmanim Service → Shul Service:**
-- Protocol: gRPC
+- Protocol: REST API
 - Purpose: Shul Service consumes published calendar streams
 - Data Flow: Calendar stream ID → Daily zmanim + Hebrew calendar events
+- API: `GET /api/v1/zmanim/streams/{id}`, `POST /api/v1/zmanim/calculate`
 
 **Shul Service → Kehilla Service:**
-- Protocol: Database reads (eventually gRPC or event-based)
+- Protocol: Database reads (eventually REST API or event-based)
 - Purpose: Kehilla reads published schedules
 - Data Flow: Shul ID → Minyan schedules with times
 
@@ -515,11 +513,14 @@ func (v *CoverageValidator) sortBySpecificity(rules []Rule) []Rule {
 ```
 shtetl-api/
 ├── services/
-│   ├── zmanim/                      # Zmanim Service (Port 8001)
+│   ├── zmanim/                      # Zmanim Service (Port 8101)
 │   │   ├── cmd/
-│   │   │   └── main.go              # Service entry point
+│   │   │   ├── lambda/              # Lambda deployment
+│   │   │   │   └── main.go          # Lambda handler (wraps HTTP router)
+│   │   │   └── server/              # Local dev / Container deployment
+│   │   │       └── main.go          # HTTP server
 │   │   ├── internal/
-│   │   │   ├── handlers/            # gRPC handlers
+│   │   │   ├── handlers/            # REST handlers (shared by lambda + server)
 │   │   │   │   ├── calculation_handler.go
 │   │   │   │   └── stream_handler.go
 │   │   │   ├── domain/              # Business logic
@@ -533,15 +534,18 @@ shtetl-api/
 │   │   │   └── repository/          # DB access layer
 │   │   │       ├── calculation_repo.go
 │   │   │       └── stream_repo.go
-│   │   ├── proto/                   # gRPC definitions
-│   │   │   └── zmanim.proto
-│   │   └── Dockerfile
+│   │   ├── api/                     # OpenAPI 3.1 spec
+│   │   │   └── zmanim.openapi.yaml
+│   │   └── Dockerfile               # For future container deployment
 │   │
-│   ├── shul/                        # Shul Service (Port 8002)
+│   ├── shul/                        # Shul Service (Port 8103)
 │   │   ├── cmd/
-│   │   │   └── main.go
+│   │   │   ├── lambda/              # Lambda deployment
+│   │   │   │   └── main.go
+│   │   │   └── server/              # Local dev / Container deployment
+│   │   │       └── main.go
 │   │   ├── internal/
-│   │   │   ├── handlers/            # REST + gRPC handlers
+│   │   │   ├── handlers/            # REST handlers
 │   │   │   │   ├── shul_handler.go
 │   │   │   │   ├── minyan_handler.go
 │   │   │   │   └── pdf_handler.go
@@ -560,12 +564,11 @@ shtetl-api/
 │   │   │       ├── shul_repo.go
 │   │   │       ├── minyan_repo.go
 │   │   │       └── primitive_repo.go
-│   │   ├── api/                     # REST API specs (OpenAPI)
-│   │   ├── proto/                   # gRPC definitions
-│   │   │   └── shul.proto
+│   │   ├── api/                     # OpenAPI 3.1 spec
+│   │   │   └── shul.openapi.yaml
 │   │   └── Dockerfile
 │   │
-│   └── kehilla/                     # Kehilla Service (Port 8003)
+│   └── kehilla/                     # Kehilla Service (Port 8105)
 │       ├── cmd/
 │       │   └── main.go
 │       ├── internal/
@@ -603,7 +606,6 @@ shtetl-api/
 │       ├── cors.go
 │       └── request_id.go
 │
-├── proto/                           # Shared proto definitions
 ├── migrations/                      # Database migrations
 │   ├── 001_initial_schema.up.sql
 │   └── 001_initial_schema.down.sql
@@ -614,7 +616,7 @@ shtetl-api/
 └── README.md
 ```
 
-### Repository 2: shtetl-web (React Frontend)
+### Repository 2: shtetl-web (Next.js Frontend)
 
 ```
 shtetl-web/
@@ -657,12 +659,19 @@ shtetl-web/
 │   │   └── utils/
 │   │       └── dates.ts
 │   │
-│   ├── App.tsx
-│   └── main.tsx
+│   └── lib/
+│       └── utils.ts
+│
+├── app/                              # Next.js App Router
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── zmanim-builder/
+│   │   └── page.tsx
+│   └── shul-admin/
+│       └── page.tsx
 │
 ├── public/
-├── index.html
-├── vite.config.ts
+├── next.config.ts
 ├── tsconfig.json
 ├── package.json
 └── README.md
@@ -727,7 +736,7 @@ Secondary benefits include team autonomy, independent deployment, and clear owne
 |------------|---------|----------|-------------------|
 | `shtetl` | Master orchestration repo (BMAD, docs, planning) | Markdown/YAML | N/A (orchestration) |
 | `shtetl-api` | Backend microservices (Zmanim, Shul, Kehilla) | Go 1.25.4 | AWS Lambda |
-| `shtetl-web` | Admin web application (Zmanim Builder, Shul Admin) | TypeScript/React | S3 + CloudFront |
+| `shtetl-web` | Admin web application (Zmanim Builder, Shul Admin) | TypeScript/Next.js | S3 + CloudFront |
 | `shtetl-mobile` | Congregant mobile app (iOS/Android) | TypeScript/React Native | App Store, Play Store |
 | `shtetl-infra` | Infrastructure as Code + Integration Tests | TypeScript (CDK) | AWS |
 
@@ -743,7 +752,7 @@ Secondary benefits include team autonomy, independent deployment, and clear owne
 │  │ shtetl-web  │  │shtetl-mobile│  │shtetl-infra │ │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘ │
 │         │                │                │        │
-│         │  REST/gRPC     │  REST          │        │
+│         │  REST          │  REST          │        │
 │         ▼                ▼                │        │
 │  ┌─────────────────────────────────────┐  │        │
 │  │           shtetl-api                │  │        │
@@ -761,7 +770,7 @@ Secondary benefits include team autonomy, independent deployment, and clear owne
 
 **shtetl-api** (Backend Team)
 - **Owns:** All business logic, data models, API contracts, database schema
-- **Publishes:** OpenAPI specs, protobuf definitions, database migrations
+- **Publishes:** OpenAPI specs, database migrations
 - **Consumes:** Nothing (root dependency)
 - **CI/CD:** Deploys all 3 services as independent Lambda functions
 
@@ -789,7 +798,7 @@ Secondary benefits include team autonomy, independent deployment, and clear owne
 
 Rather than sharing code across repos, Shtetl shares **contracts**:
 
-1. **API Contracts** - OpenAPI specs and protobuf definitions in `shtetl-api`
+1. **API Contracts** - OpenAPI 3.1 specs in `shtetl-api`
 2. **Type Generation** - Frontend repos generate TypeScript types from contracts
 3. **No Shared npm Packages** - Avoids versioning complexity and diamond dependencies
 
@@ -934,7 +943,7 @@ npm outdated             # Check for updates
 2. **Focused BMAD Configuration** - Each repo has its own `.bmad/` with domain-specific agents, workflows, and sprint artifacts
 3. **Independent Deployment** - Deploy backend without touching frontend
 4. **Clear Ownership** - Each team owns their repository completely
-5. **Technology Flexibility** - Go backend, TypeScript frontends
+5. **Technology Flexibility** - Go backend, Next.js/TypeScript web frontend, React Native mobile
 6. **Simpler CI/CD** - Each repo has focused, fast pipelines
 7. **Smaller Clone Size** - Contributors clone only what they need
 
@@ -1280,13 +1289,11 @@ GET    /api/v1/primitives
 POST   /api/v1/shuls/{shulId}/primitives
 ```
 
-**Zmanim Service (Internal gRPC):**
-```protobuf
-service ZmanimService {
-  rpc GetCalendarStream(StreamRequest) returns (CalendarStream);
-  rpc CalculateZmanim(ZmanimRequest) returns (ZmanimResponse);
-  rpc PublishStream(PublishRequest) returns (PublishResponse);
-}
+**Zmanim Service (Internal REST API):**
+```
+GET    /api/v1/zmanim/streams/{id}
+POST   /api/v1/zmanim/calculate
+POST   /api/v1/zmanim/streams
 ```
 
 ## Security Architecture
@@ -1515,7 +1522,7 @@ Coder is an open-source platform for self-hosted cloud development environments 
 │  ├── VS Code / Cursor / JetBrains      │
 │  ├── Claude Code + MCP Servers         │
 │  ├── Go 1.25.4                         │
-│  ├── Node.js 20+                       │
+│  ├── Node.js 24+                       │
 │  ├── PostgreSQL (local or remote)      │
 │  ├── Redis (local or remote)           │
 │  ├── Git repositories (all 3 repos)    │
@@ -1550,8 +1557,8 @@ resource "coder_agent" "main" {
     wget https://go.dev/dl/go1.25.4.linux-amd64.tar.gz
     sudo tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz
 
-    # Install Node.js 20
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    # Install Node.js 24
+    curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
     sudo apt-get install -y nodejs
 
     # Clone repositories
@@ -1605,9 +1612,9 @@ coder create shtetl-dev --template shtetl
 
 **The Coder workspace automatically provisions:**
 - Go 1.25.4
-- Node.js 20+
-- PostgreSQL 17 (local Docker container)
-- Redis 7.4 (local Docker container)
+- Node.js 24+
+- PostgreSQL 18 (local Docker container)
+- Redis 8.4 (local Docker container)
 - All 3 repositories cloned and configured
 - BMAD v6 workflows available
 - Claude Code + MCP servers pre-configured
@@ -1887,7 +1894,7 @@ export class DatabaseStack extends cdk.Stack {
 - **AI-Assisted:** Claude Code can generate/update CDK stacks via BMAD workflows
 
 **Why CDK over Terraform:**
-- TypeScript familiarity (same language as frontend)
+- TypeScript familiarity (same language as Next.js frontend)
 - Better AWS service coverage and faster updates
 - Type safety and IDE autocomplete
 - Built-in best practices and constructs
@@ -1905,7 +1912,7 @@ export class DatabaseStack extends cdk.Stack {
 - **Database Tables:** `snake_case` plural (e.g., `calendar_streams`, `minyanim`)
 - **Database Columns:** `snake_case` (e.g., `shul_id`, `created_at`)
 
-**React/TypeScript (Frontend):**
+**Next.js/TypeScript (Frontend):**
 - **Components:** `PascalCase.tsx` (e.g., `MinyanTreeBuilder.tsx`)
 - **Files (non-components):** `camelCase.ts` (e.g., `apiClient.ts`)
 - **Functions/Variables:** `camelCase`
@@ -1923,7 +1930,7 @@ export class DatabaseStack extends cdk.Stack {
 
 **Go Services - Layered Architecture:**
 ```
-handlers/     → HTTP/gRPC handlers (thin, validation only)
+handlers/     → HTTP/REST handlers (thin, validation only)
   ↓
 domain/       → Business logic (pure Go, no framework dependencies)
   ↓
@@ -2090,7 +2097,7 @@ func TestCoverageValidator_IdentifyGaps(t *testing.T) {
 **Rationale:**
 - Clean separation of concerns (backend, web, mobile)
 - Independent deployment cycles
-- Different technology stacks (Go, React, React Native)
+- Different technology stacks (Go, Next.js, React Native)
 - Easier for contributors to focus on specific areas
 - Better for beginner skill level (simpler mental model)
 
@@ -2171,7 +2178,7 @@ func TestCoverageValidator_IdentifyGaps(t *testing.T) {
 
 **Rationale:**
 - **User metadata support:** Store `shul_id` and `role` in Clerk user metadata
-- **Pre-built UI components:** React and mobile SDKs with customizable auth flows
+- **Pre-built UI components:** Next.js and mobile SDKs with customizable auth flows
 - **JWT tokens:** Secure, verifiable tokens with custom claims for multi-tenancy
 - **Go SDK:** Strong backend integration for token verification
 - **Multiple auth providers:** Email, Google, Apple, phone (SMS)
@@ -2221,12 +2228,12 @@ func TestCoverageValidator_IdentifyGaps(t *testing.T) {
 **Decision:** Use AWS CDK (TypeScript) for infrastructure as code instead of Terraform
 
 **Rationale:**
-- **TypeScript consistency:** Same language as frontend (React/TypeScript)
+- **TypeScript consistency:** Same language as frontend (Next.js/TypeScript)
 - **Type safety:** IDE autocomplete, compile-time checks, fewer runtime errors
 - **AWS-native:** Better service coverage, faster updates when AWS releases new features
 - **Constructs:** Higher-level abstractions (L2/L3 constructs) = less boilerplate
 - **Lambda integration:** Easier to bundle and deploy Go Lambda functions
-- **Developer familiarity:** Frontend developers can contribute to infrastructure
+- **Developer familiarity:** Next.js developers can contribute to infrastructure (both TypeScript)
 - **CDK Diff:** Better diff preview than Terraform plan
 - **No state management:** CloudFormation handles state, no S3 backend config needed
 
@@ -2264,7 +2271,7 @@ new lambda.Function(this, 'ZmanimService', {
 - AWS-only lock-in (acceptable - no multi-cloud plans)
 - Better infrastructure debugging via TypeScript
 - Easier onboarding for TypeScript developers
-- Infrastructure code lives in same language ecosystem as frontend
+- Infrastructure code lives in same language ecosystem as Next.js frontend
 
 **Risk Mitigation:**
 - CDK can export CloudFormation templates (portable)

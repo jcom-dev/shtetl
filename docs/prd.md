@@ -375,10 +375,10 @@ MVP focuses on free/open-source model. Subscription tiers deferred to post-MVP b
 - Push notification support
 
 **Backend APIs:**
-- RESTful API for web/mobile clients
-- gRPC for internal service-to-service communication
-- PostgreSQL 17 database
-- Redis 7.4 caching layer
+- REST API for all communication (web/mobile clients and internal service-to-service)
+- Lambda-compatible architecture (start with Lambda, container escape hatch available)
+- PostgreSQL 18 database
+- Redis 8.4 caching layer
 
 **Accessibility:**
 - WCAG 2.1 Level AA compliance (goal for web interfaces)
@@ -423,13 +423,13 @@ GET    /api/v1/primitives                       - Get available primitives
 POST   /api/v1/shuls/{shulId}/primitives        - Create custom primitive
 ```
 
-**Zmanim Service (Internal gRPC):**
-```protobuf
-service ZmanimService {
-  rpc GetCalendarStream(StreamRequest) returns (CalendarStream);
-  rpc CalculateZmanim(ZmanimRequest) returns (ZmanimResponse);
-  rpc PublishStream(PublishRequest) returns (PublishResponse);
-}
+**Zmanim Service (Internal REST API):**
+```
+GET    /api/v1/zmanim/streams/{id}              - Get calendar stream by ID
+POST   /api/v1/zmanim/calculate                 - Calculate zmanim for date/location
+POST   /api/v1/zmanim/streams                   - Publish new calendar stream
+PUT    /api/v1/zmanim/streams/{id}              - Update calendar stream
+GET    /api/v1/zmanim/streams/{id}/audit        - Get audit trail (7-year retention)
 ```
 
 **Standard Response Format:**

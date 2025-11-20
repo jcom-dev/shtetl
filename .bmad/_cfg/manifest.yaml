@@ -1,7 +1,7 @@
 installation:
-  version: 6.0.0-alpha.10
-  installDate: '2025-11-16T16:50:19.145Z'
-  lastUpdated: '2025-11-16T16:50:19.145Z'
+  version: 6.0.0-alpha.12
+  installDate: '2025-11-19T12:46:25.566Z'
+  lastUpdated: '2025-11-19T12:46:25.566Z'
 modules:
   - core
   - bmm
@@ -9,3 +9,4 @@ modules:
 ides:
   - claude-code
   - codex
+  - gemini
