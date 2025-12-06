@@ -1,0 +1,12 @@
+[submodule "submodules/shtetl-api"]
+	path = submodules/shtetl-api
+	url = git@github.com:jcom-dev/shtetl-api.git
+[submodule "submodules/shtetl-web"]
+	path = submodules/shtetl-web
+	url = git@github.com:jcom-dev/shtetl-web.git
+[submodule "submodules/shtetl-mobile"]
+	path = submodules/shtetl-mobile
+	url = git@github.com:jcom-dev/shtetl-mobile.git
+[submodule "submodules/shtetl-infra"]
+	path = submodules/shtetl-infra
+	url = git@github.com:jcom-dev/shtetl-infra.git

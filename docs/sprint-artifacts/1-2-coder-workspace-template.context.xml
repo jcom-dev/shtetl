@@ -1,0 +1,234 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.2</storyId>
+    <title>Coder Workspace Template</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-2-coder-workspace-template.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>new developer</asA>
+    <iWant>to run one command and have a complete working environment</iWant>
+    <soThat>I don't waste hours on environment setup</soThat>
+    <tasks>
+      - Task 1: Create Coder workspace template (AC: 1)
+        - 1.1 Create `.coder/` directory structure in main repo
+        - 1.2 Create `shtetl-workspace.tf` Terraform template
+        - 1.3 Configure PostgreSQL 18 Docker container (postgres:18-alpine)
+        - 1.4 Configure Redis 8.4 Docker container (redis:8.4-alpine)
+        - 1.5 Add Go 1.25.4 installation to template
+        - 1.6 Add Node.js 24.x LTS installation to template
+        - 1.7 Configure environment variables for all services
+      - Task 2: Create startup script (AC: 2)
+        - 2.1 Create `.coder/startup.sh` script
+        - 2.2 Add repo cloning logic (shtetl-api, shtetl-web, shtetl-mobile)
+        - 2.3 Add `go mod download` for each Go service
+        - 2.4 Add `npm install` for web and mobile repos
+        - 2.5 Add database migration execution
+        - 2.6 Add service startup commands (all 3 services)
+        - 2.7 Handle errors gracefully with clear messaging
+      - Task 3: Configure health check endpoints (AC: 3)
+        - 3.1 Ensure each service has `/health` endpoint returning JSON status
+        - 3.2 Test Zmanim service health check on port 8001
+        - 3.3 Test Shul service health check on port 8002
+        - 3.4 Test Kehilla service health check on port 8003
+        - 3.5 Verify web app loads on port 3000
+        - 3.6 Verify PostgreSQL connection
+      - Task 4: Cross-platform testing (AC: 4)
+        - 4.1 Test workspace creation on macOS
+        - 4.2 Test workspace creation on Linux (Ubuntu 22.04)
+        - 4.3 Test workspace creation on Windows WSL2
+        - 4.4 Document any platform-specific workarounds
+        - 4.5 Update README with platform requirements
+      - Task 5: Documentation and demo (AC: 5)
+        - 5.1 Update README.md with Coder setup instructions
+        - 5.2 Record 2-minute demo video
+        - 5.3 Document troubleshooting guide for common issues
+        - 5.4 Add architecture notes about workspace design decisions
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Workspace creation works end-to-end
+       - Given Coder is installed locally
+       - When developer runs `coder create shtetl-dev --template shtetl`
+       - Then workspace is created with PostgreSQL 18, Redis 8.4, Go 1.25.4, Node.js 24.x LTS, and all 3 repos cloned automatically
+
+    2. Startup script completes successfully
+       - `go mod download` for all Go services
+       - `npm install` for web and mobile
+       - Database migrations applied (empty initially)
+       - All services start successfully
+
+    3. Health verification passes
+       - Visit http://localhost:8001/health → Zmanim service "ok"
+       - Visit http://localhost:8002/health → Shul service "ok"
+       - Visit http://localhost:8003/health → Kehilla service "ok"
+       - Visit http://localhost:3000 → Web app loads
+       - Connect to PostgreSQL → database exists
+
+    4. Cross-platform compatibility tested
+       - macOS (tested on latest)
+       - Linux (Ubuntu 22.04)
+       - Windows WSL2
+
+    5. Demo documentation complete
+       - 2-minute demo video showing `coder create` → working environment
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Development Environment &amp; Workflow</section>
+        <snippet>Shtetl is built AI-first from day 1 using the BMAD Method v6 with Claude Code and Coder as foundational tools. Coder + BMAD makes identical development environments automatic, ensuring consistency for AI agents and human developers.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Development Philosophy</section>
+        <snippet>Core Principles: AI-First Development, Cloud Development Environments (Coder workspaces are the standard), BMAD Workflow Orchestration, MCP Deep Integration, Fast Onboarding (&lt;5 minutes), Reproducible Environments (Zero configuration drift).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Shtetl Architecture Document</title>
+        <section>Repository Setup (via Coder Workspace)</section>
+        <snippet>Launch Coder workspace with `coder create shtetl-dev --template shtetl`. Inside workspace, repositories are auto-cloned and configured. The startup script handles: Go module initialization, Next.js + TypeScript setup, Expo + TypeScript setup, npm/go dependency installation, PostgreSQL + Redis startup, BMAD workflow initialization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>shtetl - Epic Breakdown</title>
+        <section>Story 1.2: Coder Workspace Template</section>
+        <snippet>Prerequisites: Story 1.1. Technical Notes: Create `.coder/shtetl-workspace.tf` template, Startup script: `.coder/startup.sh`, Use Docker images: postgres:18-alpine, redis:7.4-alpine (note: should be 8.4), Environment variables in workspace template, Record 2-minute demo video.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>submodules/shtetl-api/zmanim/cmd/zmanim/main.go</path>
+        <kind>service</kind>
+        <symbol>main</symbol>
+        <lines>1-25</lines>
+        <reason>Zmanim service entry point with REST server on port 8101 - needs to be started by workspace startup script</reason>
+      </artifact>
+      <artifact>
+        <path>submodules/shtetl-api/shul/cmd/shul/main.go</path>
+        <kind>service</kind>
+        <symbol>main</symbol>
+        <lines>1-23</lines>
+        <reason>Shul service entry point with REST server on port 8103 and /health endpoint - reference for health check verification</reason>
+      </artifact>
+      <artifact>
+        <path>submodules/shtetl-api/kehilla/cmd/kehilla/main.go</path>
+        <kind>service</kind>
+        <symbol>main</symbol>
+        <lines>1-26</lines>
+        <reason>Kehilla service entry point with HTTP server on port 8003 and /health endpoint - reference for health check verification</reason>
+      </artifact>
+      <artifact>
+        <path>submodules/shtetl-web/package.json</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>all</lines>
+        <reason>Next.js web app dependencies that need to be installed via npm install in startup script</reason>
+      </artifact>
+      <artifact>
+        <path>submodules/shtetl-mobile/package.json</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>all</lines>
+        <reason>Expo mobile app dependencies that need to be installed via npm install in startup script</reason>
+      </artifact>
+      <artifact>
+        <path>submodules/shtetl-api/zmanim/go.mod</path>
+        <kind>config</kind>
+        <symbol>module</symbol>
+        <lines>1-3</lines>
+        <reason>Go module definition for zmanim service - go mod download needs to be run for this and other services</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <go>
+        <module>github.com/shtetl-platform/shtetl-api/zmanim</module>
+        <module>github.com/shtetl-platform/shtetl-api/shul</module>
+        <module>github.com/shtetl-platform/shtetl-api/kehilla</module>
+        <version>1.25.4</version>
+      </go>
+      <node>
+        <package>next</package>
+        <package>react</package>
+        <package>typescript</package>
+        <package>@clerk/nextjs</package>
+        <package>downshift</package>
+        <package>@floating-ui/react</package>
+        <package>expo</package>
+        <package>@clerk/clerk-expo</package>
+        <version>24.11.1</version>
+      </node>
+      <docker>
+        <image>postgres:18-alpine</image>
+        <image>redis:8.4-alpine</image>
+      </docker>
+      <coder>
+        <version>latest</version>
+      </coder>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - AI-First Development: Coder workspaces are the standard development environment per architecture.md Development Philosophy
+    - Zero Configuration Drift: Every workspace must be identical for consistent AI agent contexts
+    - BMAD Integration: Workspace must support BMAD v6 workflows and Claude Code
+    - Fast Onboarding Goal: New contributors productive in &lt;5 minutes
+    - Service Ports: Zmanim (8001), Shul (8002), Kehilla (8003), Web (3000), PostgreSQL (5432), Redis (6379)
+    - Prerequisites: Story 1.1 (Multi-Repository Structure Setup) must be completed
+    - GitHub repositories must exist: shtetl-api, shtetl-web, shtetl-mobile
+    - Each service must have basic main.go with HTTP server scaffold
+    - Use Terraform for Coder workspace template (.coder/shtetl-workspace.tf)
+    - Use Docker images: postgres:18-alpine, redis:8.4-alpine
+    - Startup script must handle errors gracefully with clear messaging
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Health Check Endpoint</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /health → {"status":"ok","service":"service-name"}</signature>
+      <path>submodules/shtetl-api/shul/cmd/shul/main.go</path>
+    </interface>
+    <interface>
+      <name>Coder Workspace Template</name>
+      <kind>Terraform configuration</kind>
+      <signature>.coder/shtetl-workspace.tf with Docker provider and resource definitions</signature>
+      <path>.coder/shtetl-workspace.tf</path>
+    </interface>
+    <interface>
+      <name>Startup Script</name>
+      <kind>Bash script</kind>
+      <signature>.coder/startup.sh with repo cloning, dependency installation, and service startup</signature>
+      <path>.coder/startup.sh</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing for this story focuses on integration and end-to-end verification rather than unit tests. The primary test is the successful creation and startup of a Coder workspace. Manual verification includes: workspace creation command succeeds, all services start without errors, health endpoints return expected responses, web app loads in browser, database connection succeeds. Cross-platform testing on macOS, Linux (Ubuntu 22.04), and Windows WSL2 is required.
+    </standards>
+    <locations>
+      - Manual testing: Run `coder create shtetl-dev --template shtetl` and verify all acceptance criteria
+      - Health check verification: curl http://localhost:8001/health, 8002/health, 8003/health
+      - Web app verification: Open http://localhost:3000 in browser
+      - Database verification: psql connection test
+    </locations>
+    <ideas>
+      - AC1: Test workspace creation command succeeds on all platforms (macOS, Linux, WSL2)
+      - AC2: Verify startup script completes without errors and all dependencies are installed
+      - AC3: Automated health check script that curls all service endpoints and verifies JSON responses
+      - AC4: Document platform-specific issues encountered during cross-platform testing
+      - AC5: Create demo video showing complete workflow from `coder create` to working environment
+    </ideas>
+  </tests>
+</story-context>
